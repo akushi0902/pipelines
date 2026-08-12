@@ -66,7 +66,12 @@ def create_app() -> FastAPI:
 
         async def _dev_actor() -> CurrentActor:
             return CurrentActor(
-                user_id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+                # Must match tests.fixtures.seed_baseline.USERS["appsec_lead"] —
+                # SEED_DEMO_DATA creates the app_user row under that id, and
+                # Analysis.owner_id has a hard FK to app_user.id. A mismatch here
+                # causes every write (e.g. POST /analyses) to fail with an
+                # unhandled IntegrityError -> 500.
+                user_id=uuid.UUID("00000000-0000-0000-0001-000000000005"),
                 persona="appsec_lead",  # broadest capability set, incl. admin + governance
                 workspace_id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
                 display_name="Dev User (auth disabled)",
