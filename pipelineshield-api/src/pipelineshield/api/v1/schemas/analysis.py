@@ -1,18 +1,19 @@
 """Pydantic v2 request and response models for the Analysis ingestion API.
 
 Request A (paste):
-    POST /api/v1/analyses  Content-Type: application/json
-    Body: PasteAnalysisRequest
+POST /api/v1/analyses  Content-Type: application/json
+Body: PasteAnalysisRequest
 
 Request B (upload):
-    POST /api/v1/analyses  Content-Type: multipart/form-data
-    Parts: file (UploadFile) + optional declared_format field
+POST /api/v1/analyses  Content-Type: multipart/form-data
+Parts: file (UploadFile) + optional declared_format field
 
 Response 201:
-    AnalysisResponse
+AnalysisResponse
 
 All error responses follow RFC 7807 with an additional constraint field.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -69,33 +70,40 @@ class PasteAnalysisRequest(BaseModel):
     )
     filename: str | None = Field(
         None,
-        description="Optional original filename (e.g. .github/workflows/ci.yml).",
+        description=(
+            "Optional original filename "
+            "(e.g. .github/workflows/ci.yml)."
+        ),
         max_length=255,
     )
     declared_format: PipelineFormat | None = Field(
         None,
         description=(
-            "Optional caller-declared format. When provided and the detected "
-            "format differs, format_confirmation_required is set to true."
+            "Optional caller-declared format. When provided and the "
+            "detected format differs, format_confirmation_required is "
+            "set to true."
         ),
     )
 
     @field_validator("definition_text")
     @classmethod
-    def _not_empty_and_within_size(cls, v: str) -> str:
-        if not v or not v.strip():
+    def _not_empty_and_within_size(cls, value: str) -> str:
+        if not value or not value.strip():
             raise ValueError(
                 "definition_text must not be empty or whitespace-only. "
                 "constraint=non_empty_content"
             )
-        encoded = v.encode("utf-8", errors="replace")
+
+        encoded = value.encode("utf-8", errors="replace")
+
         if len(encoded) > PAYLOAD_MAX_BYTES:
             raise ValueError(
-                f"definition_text exceeds the 512 KB limit "
+                "definition_text exceeds the 512 KB limit "
                 f"({len(encoded)} > {PAYLOAD_MAX_BYTES} bytes). "
                 "constraint=max_bytes=524288"
             )
-        return v
+
+        return value
 
 
 # ---------------------------------------------------------------------------
@@ -106,48 +114,98 @@ class PasteAnalysisRequest(BaseModel):
 class AnalysisResponse(BaseModel):
     """201 response for a successfully created analysis."""
 
+    model_config = ConfigDict(frozen=True)
+
     analysis_id: uuid.UUID
     workspace_id: uuid.UUID
     catalogue_version_id: uuid.UUID
     created_at: datetime
     detected_format: str
-    format_confidence: float = Field(ge=0.0, le=1.0)
+    format_confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+    )
     format_confirmation_required: bool
     coverage_report: dict[str, Any]
-    advisory_disclaimer: str
+    advisory_disclaimer: str = Field(
+        ...,
+        description=(
+            "Non-dismissible advisory disclaimer populated from "
+            "the server-side ADVISORY_DISCLAIMER constant."
+        ),
+    )
 
+    @field_validator("advisory_disclaimer")
+    @classmethod
+    def _disclaimer_must_match_constant(cls, value: str) -> str:
+        if not value or not value.strip():
+            raise ValueError(
+                "advisory_disclaimer must not be blank; "
+                "populate from ADVISORY_DISCLAIMER constant."
+            )
 
-# ---------------------------------------------------------------------------
-# Error response (RFC 7807)
-# ---------------------------------------------------------------------------
+        if value != ADVISORY_DISCLAIMER:
+            raise ValueError(
+                "advisory_disclaimer must match the server-side "
+                "ADVISORY_DISCLAIMER constant."
+            )
+
+        return value
 
 
 class AnalysisSummaryResponse(BaseModel):
     """Summary-scoped analysis response for the engineering_manager persona.
 
     Omits per-finding evidence, definition excerpts, and coverage details.
-    Selected by the service layer when the actor's scope is analysis:read:summary;
-    never by conditional field stripping inside a router.
+    Selected by the service layer when the actor's scope is
+    analysis:read:summary; never by conditional field stripping inside a
+    router.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     analysis_id: uuid.UUID
     workspace_id: uuid.UUID
     catalogue_version_id: uuid.UUID
     created_at: datetime
     detected_format: str
-    score: int
-    grade: str
+    score: float = Field(
+        ...,
+        ge=0.0,
+        le=100.0,
+        description="Score representing coverage of assessed controls.",
+    )
+    grade: str = Field(
+        ...,
+        description=(
+            "Letter grade representing assessed-control coverage. "
+            "Does not imply security or compliance."
+        ),
+    )
+
+    @field_validator("grade")
+    @classmethod
+    def _validate_grade(cls, value: str) -> str:
+        normalized = value.strip().upper()
+
+        if normalized not in {"A", "B", "C", "D", "E", "F"}:
+            raise ValueError(
+                "grade must be one of A, B, C, D, E, or F."
+            )
+
+        return normalized
 
 
 # ---------------------------------------------------------------------------
-# Error response (RFC 7807)
+# Format confirmation
 # ---------------------------------------------------------------------------
 
 
 class FormatConfirmationRequest(BaseModel):
     """Request body for POST /api/v1/analyses/{id}/format-confirmation."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     confirmed_format: PipelineFormat = Field(
         ...,
@@ -160,6 +218,8 @@ class FormatConfirmationRequest(BaseModel):
 
 class FormatConfirmationResponse(BaseModel):
     """200 response for a successful format confirmation."""
+
+    model_config = ConfigDict(frozen=True)
 
     analysis_id: uuid.UUID
     confirmed_format: str
@@ -174,12 +234,22 @@ class FormatConfirmationResponse(BaseModel):
 class IngestionErrorResponse(BaseModel):
     """RFC 7807 structured error body for all 4xx/5xx responses."""
 
+    model_config = ConfigDict(frozen=True)
+
     type: str
     title: str
     status: int
     detail: str
     correlation_id: str
     constraint: str | None = None
-    parse_line: int | None = None
-    parse_column: int | None = None
-    errors: list[dict[str, Any]] = Field(default_factory=list)
+    parse_line: int | None = Field(
+        None,
+        ge=1,
+    )
+    parse_column: int | None = Field(
+        None,
+        ge=1,
+    )
+    errors: list[dict[str, Any]] = Field(
+        default_factory=list,
+    )
