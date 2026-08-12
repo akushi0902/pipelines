@@ -87,6 +87,7 @@ class AppUser(Base):
     )
     role_bindings: Mapped[list["RoleBinding"]] = relationship(  # type: ignore[name-defined]
         back_populates="app_user",
+        foreign_keys="RoleBinding.app_user_id",
         lazy="raise",
     )
 
