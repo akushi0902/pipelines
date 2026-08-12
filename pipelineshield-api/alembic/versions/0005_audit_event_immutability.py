@@ -13,8 +13,10 @@ Changes:
 3. Immutability trigger:
    - PostgreSQL: a PL/pgSQL function + BEFORE UPDATE OR DELETE trigger.
    - SQLite:    two RAISE(ABORT) triggers (one per UPDATE, one per DELETE).
-4. pipeline_definition: partial index on uploaded_at WHERE purged_at IS NULL
-   for the daily purge worker.
+
+Note: pipeline_definition is hard-delete only (no purged_at/deleted_at
+column exists on that table — see the model docstring). Purge-worker
+scheduling is handled by the indexed purge_due_at column added in 0009.
 
 Forward-only.  The downgrade drops the added indexes and triggers.
 """
@@ -123,18 +125,7 @@ def upgrade() -> None:
     )
 
     # ------------------------------------------------------------------
-    # 3. pipeline_definition: partial index on uploaded_at for purge worker
-    # ------------------------------------------------------------------
-    if pg:
-        op.create_index(
-            "ix_pipeline_definition_uploaded_at_not_purged",
-            "pipeline_definition",
-            ["uploaded_at"],
-            postgresql_where=sa.text("purged_at IS NULL"),
-        )
-
-    # ------------------------------------------------------------------
-    # 4. Immutability trigger
+    # 3. Immutability trigger
     # ------------------------------------------------------------------
     bind = op.get_bind()
 
@@ -180,7 +171,7 @@ def upgrade() -> None:
         """))
 
     # ------------------------------------------------------------------
-    # 5. PostgreSQL-only: re-assert REVOKE (defence against grant drift)
+    # 4. PostgreSQL-only: re-assert REVOKE (defence against grant drift)
     # ------------------------------------------------------------------
     if pg:
         bind.execute(sa.text(
@@ -201,7 +192,6 @@ def downgrade() -> None:
     if pg:
         bind.execute(sa.text("DROP TRIGGER IF EXISTS trg_audit_event_immutable ON audit_event"))
         bind.execute(sa.text("DROP FUNCTION IF EXISTS audit_event_immutable()"))
-        op.drop_index("ix_pipeline_definition_uploaded_at_not_purged", "pipeline_definition")
     else:
         bind.execute(sa.text("DROP TRIGGER IF EXISTS trg_audit_event_no_update"))
         bind.execute(sa.text("DROP TRIGGER IF EXISTS trg_audit_event_no_delete"))
