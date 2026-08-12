@@ -5,9 +5,11 @@ Retention: same as owning analysis (90 days)
 
 One row per (analysis_id, category_id) pair, storing the earned / possible
 weight and the count of NOT_ASSESSABLE controls excluded from scoring.
+
 Rows are written once (INSERT) and never mutated; the analysis row is the
 authoritative source of the catalogue_version used for scoring.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -24,7 +26,8 @@ from .base import Base
 class AnalysisCategoryScore(Base):
     """Per-category score breakdown for one analysis run.
 
-    Unique key: (analysis_id, category_id) — one row per category per analysis.
+    Unique key: (analysis_id, category_id) — one row per category per
+    analysis.
     """
 
     __tablename__ = "analysis_category_score"
@@ -34,6 +37,18 @@ class AnalysisCategoryScore(Base):
             "analysis_id",
             "category_id",
             name="uq_analysis_category_score_analysis_id_category_id",
+        ),
+        sa.CheckConstraint(
+            "earned >= 0",
+            name="earned_non_negative",
+        ),
+        sa.CheckConstraint(
+            "possible >= 0",
+            name="possible_non_negative",
+        ),
+        sa.CheckConstraint(
+            "earned <= possible",
+            name="earned_not_greater_than_possible",
         ),
         sa.CheckConstraint(
             "excluded_count >= 0",
@@ -47,6 +62,7 @@ class AnalysisCategoryScore(Base):
         default=uuid.uuid4,
         comment="Primary key.",
     )
+
     analysis_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("analysis.id", ondelete="CASCADE"),
@@ -54,16 +70,19 @@ class AnalysisCategoryScore(Base):
         index=True,
         comment="Owning analysis row.",
     )
+
     category_id: Mapped[str] = mapped_column(
         String(64),
         nullable=False,
         comment="Catalogue category identifier (e.g. 'secrets_hygiene').",
     )
+
     earned: Mapped[float] = mapped_column(
         Numeric(8, 4),
         nullable=False,
-        comment="Weighted credit earned for this category (0 – category weight).",
+        comment="Weighted credit earned for this category.",
     )
+
     possible: Mapped[float] = mapped_column(
         Numeric(8, 4),
         nullable=False,
@@ -72,12 +91,14 @@ class AnalysisCategoryScore(Base):
             "(excludes NOT_ASSESSABLE controls)."
         ),
     )
+
     excluded_count: Mapped[int] = mapped_column(
         sa.Integer,
         nullable=False,
         server_default=sa.text("0"),
         comment="Number of NOT_ASSESSABLE controls excluded from denominator.",
     )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -95,5 +116,6 @@ class AnalysisCategoryScore(Base):
         return (
             f"<AnalysisCategoryScore analysis_id={self.analysis_id!r} "
             f"category={self.category_id!r} "
-            f"earned={self.earned!r} possible={self.possible!r}>"
+            f"earned={self.earned!r} "
+            f"possible={self.possible!r}>"
         )
