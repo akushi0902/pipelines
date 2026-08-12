@@ -3,11 +3,11 @@ name: PipelineShield CI/CD
 on:
   push:
     branches:
-      - "forge/pipeline-shield-ai-ci-cd-secur-d374f19a-run5-51wo"
+      - "main"
 
   pull_request:
     branches:
-      - "forge/pipeline-shield-ai-ci-cd-secur-d374f19a-run5-51wo"
+      - "main"
 
 permissions:
   contents: read
