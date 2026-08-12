@@ -1,0 +1,10 @@
+# Multi-document YAML fixture (two docs separated by ---)
+name: first-pipeline
+on:
+  push:
+    branches: [main]
+---
+name: second-pipeline
+on:
+  pull_request:
+    branches: [main]

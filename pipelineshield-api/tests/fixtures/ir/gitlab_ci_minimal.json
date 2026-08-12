@@ -1,0 +1,46 @@
+{
+  "ir_version": "1.0",
+  "source_format": "gitlab_ci",
+  "triggers": ["push"],
+  "trigger_details": {},
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "test",
+      "name": "test",
+      "runs_on": "docker",
+      "steps": [
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "pytest tests/",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": {"start_line": 5, "start_column": 3, "end_line": null},
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {"scope": "job", "state": "absent", "grants": {}, "anchor": null},
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": {"start_line": 3, "start_column": 1, "end_line": null},
+      "extraction_metadata": {}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": ["script"],
+    "constructs_excluded": [],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": null
+}

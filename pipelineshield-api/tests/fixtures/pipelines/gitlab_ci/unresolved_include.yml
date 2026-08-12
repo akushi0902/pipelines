@@ -1,0 +1,23 @@
+# GitLab CI fixture with an unresolved remote include.
+# Expected: included controls are Not Assessable; banner payload present;
+# the unresolved fragment has a referencing anchor in the excluded fragment entry.
+
+include:
+  - remote: 'https://example.com/security-templates.yml'
+  - local: '.gitlab/templates/build.yml'
+
+stages:
+  - build
+  - test
+
+build-job:
+  stage: build
+  script:
+    - echo "Building..."
+    - mvn clean package
+
+test-job:
+  stage: test
+  script:
+    - echo "Testing..."
+    - mvn test

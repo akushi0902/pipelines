@@ -1,0 +1,17 @@
+// Scripted Jenkins pipeline — no `pipeline {` block
+// Detection must classify as jenkins with lower confidence (< 0.8 without filename)
+node('linux') {
+    stage('Checkout') {
+        checkout scm
+    }
+    stage('Build') {
+        sh 'mvn clean package -DskipTests'
+    }
+    stage('Test') {
+        try {
+            sh 'mvn test'
+        } catch (err) {
+            currentBuild.result = 'UNSTABLE'
+        }
+    }
+}

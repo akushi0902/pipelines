@@ -1,0 +1,27 @@
+stages:
+  - test
+  - build
+
+variables:
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+
+default:
+  image: python:3.12-slim
+
+test:
+  stage: test
+  script:
+    - pip install -e .[dev]
+    - pytest tests/
+
+build-image:
+  stage: build
+  image: docker:27.5.1
+  services:
+    - docker:27.5.1-dind
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t "$IMAGE_NAME" .
+    - docker push "$IMAGE_NAME"
+  only:
+    - main

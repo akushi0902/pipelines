@@ -1,0 +1,45 @@
+stages:
+  - test
+  - deploy
+
+# Hidden job templates (leading dot) — not executable, only for extends
+.deploy-common:
+  image: alpine:3.18
+  before_script:
+    - apk add --no-cache curl
+  variables:
+    ENVIRONMENT: staging
+
+.test-common:
+  image: python:3.11
+  before_script:
+    - pip install pytest
+
+# Concrete jobs using hidden templates
+unit-test:
+  extends: .test-common
+  stage: test
+  script:
+    - pytest tests/ -v
+  variables:
+    CI_JOB_TOKEN: $CI_JOB_TOKEN
+
+staging-deploy:
+  extends: .deploy-common
+  stage: deploy
+  script:
+    - curl -X POST $DEPLOY_URL
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: always
+
+production-deploy:
+  extends: .deploy-common
+  stage: deploy
+  variables:
+    ENVIRONMENT: production
+  script:
+    - curl -X POST $PROD_DEPLOY_URL
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: manual

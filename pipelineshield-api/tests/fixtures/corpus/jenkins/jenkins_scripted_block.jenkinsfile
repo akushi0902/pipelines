@@ -1,0 +1,43 @@
+// Synthetic NOT ASSESSABLE fixture: declarative pipeline with a scripted script{} island.
+// The script{} block uses dynamic Groovy that cannot be statically analyzed.
+// This file exercises the Not Assessable classification path.
+
+pipeline {
+    agent {
+        docker {
+            image 'eclipse-temurin:21-jdk@sha256:SYNTHETIC_DIGEST_PLACEHOLDER_0000000000000000000000000000000000000000'
+        }
+    }
+
+    stages {
+        stage('Test') {
+            steps {
+                sh './mvnw test'
+            }
+        }
+
+        stage('Dynamic Config') {
+            steps {
+                // NOT ASSESSABLE: script{} island uses dynamic Groovy DSL.
+                // Control coverage inside this block cannot be determined by
+                // static analysis — classifies the entire file as Not Assessable
+                // for controls that may be conditionally invoked here.
+                script {
+                    def targets = ['staging', 'production']
+                    targets.each { env ->
+                        if (env == 'production') {
+                            input message: "Deploy to ${env}?", ok: 'Approve'
+                        }
+                        sh "./scripts/deploy.sh ${env} ${GIT_COMMIT}"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

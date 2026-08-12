@@ -1,0 +1,285 @@
+{
+  "categories": [
+    {
+      "id": "secrets_hygiene",
+      "name": "Secrets Hygiene",
+      "weight": 15,
+      "enabled": true,
+      "description": "Detection of hardcoded or leaked secrets in pipeline definitions.",
+      "controls": [
+        {
+          "id": "sh-001",
+          "category_id": "secrets_hygiene",
+          "severity": "critical",
+          "enabled": true,
+          "reference_tools": [
+            "Gitleaks",
+            "TruffleHog"
+          ],
+          "remediation_template_ref": "secrets/remove_hardcoded_secret",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        },
+        {
+          "id": "sh-002",
+          "category_id": "secrets_hygiene",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [
+            "Gitleaks"
+          ],
+          "remediation_template_ref": "secrets/rotate_exposed_secret",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        }
+      ]
+    },
+    {
+      "id": "artifact_signing",
+      "name": "Artifact Signing and Provenance",
+      "weight": 15,
+      "enabled": true,
+      "description": "Verification that pipeline artifacts are signed and provenance is recorded.",
+      "controls": [
+        {
+          "id": "as-001",
+          "category_id": "artifact_signing",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [
+            "Cosign",
+            "Sigstore"
+          ],
+          "remediation_template_ref": "signing/add_cosign_step",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        },
+        {
+          "id": "as-002",
+          "category_id": "artifact_signing",
+          "severity": "medium",
+          "enabled": true,
+          "reference_tools": [
+            "Cosign",
+            "in-toto"
+          ],
+          "remediation_template_ref": "signing/add_provenance_attestation",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        }
+      ]
+    },
+    {
+      "id": "static_analysis",
+      "name": "Static Analysis",
+      "weight": 12,
+      "enabled": true,
+      "description": "SAST scanning integrated into the CI pipeline.",
+      "controls": [
+        {
+          "id": "sa-001",
+          "category_id": "static_analysis",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [
+            "Semgrep",
+            "CodeQL"
+          ],
+          "remediation_template_ref": "sast/add_semgrep_step",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        }
+      ]
+    },
+    {
+      "id": "dependency_scanning",
+      "name": "Dependency and Container Scanning",
+      "weight": 12,
+      "enabled": true,
+      "description": "SCA and container image vulnerability scanning.",
+      "controls": [
+        {
+          "id": "ds-001",
+          "category_id": "dependency_scanning",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [
+            "Trivy",
+            "Grype"
+          ],
+          "remediation_template_ref": "sca/add_trivy_step",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        },
+        {
+          "id": "ds-002",
+          "category_id": "dependency_scanning",
+          "severity": "medium",
+          "enabled": true,
+          "reference_tools": [
+            "Trivy"
+          ],
+          "remediation_template_ref": "sca/add_container_scan",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        }
+      ]
+    },
+    {
+      "id": "least_privilege",
+      "name": "Least-Privilege Identity",
+      "weight": 12,
+      "enabled": true,
+      "description": "CI pipeline tokens and service accounts use minimum required permissions.",
+      "controls": [
+        {
+          "id": "lp-001",
+          "category_id": "least_privilege",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [
+            "GitHub Actions permissions key",
+            "CODEOWNERS"
+          ],
+          "remediation_template_ref": "identity/restrict_token_permissions",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        },
+        {
+          "id": "lp-002",
+          "category_id": "least_privilege",
+          "severity": "medium",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": "identity/use_ephemeral_credentials",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        }
+      ]
+    },
+    {
+      "id": "iac_misconfiguration",
+      "name": "IaC Misconfiguration",
+      "weight": 10,
+      "enabled": true,
+      "description": "Infrastructure-as-Code security misconfigurations in pipeline-managed resources.",
+      "controls": [
+        {
+          "id": "iac-001",
+          "category_id": "iac_misconfiguration",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [
+            "Checkov",
+            "tfsec"
+          ],
+          "remediation_template_ref": "iac/add_checkov_step",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        }
+      ]
+    },
+    {
+      "id": "supply_chain_integrity",
+      "name": "Pipeline Supply-Chain Integrity",
+      "weight": 10,
+      "enabled": true,
+      "description": "Third-party actions and dependencies are pinned and verified.",
+      "controls": [
+        {
+          "id": "sci-001",
+          "category_id": "supply_chain_integrity",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [
+            "StepSecurity/harden-runner"
+          ],
+          "remediation_template_ref": "supply_chain/pin_action_versions",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        },
+        {
+          "id": "sci-002",
+          "category_id": "supply_chain_integrity",
+          "severity": "medium",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": "supply_chain/verify_action_checksums",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        }
+      ]
+    },
+    {
+      "id": "sbom",
+      "name": "SBOM",
+      "weight": 8,
+      "enabled": true,
+      "description": "Software Bill of Materials is generated and published per build.",
+      "controls": [
+        {
+          "id": "sbom-001",
+          "category_id": "sbom",
+          "severity": "medium",
+          "enabled": true,
+          "reference_tools": [
+            "Syft",
+            "CycloneDX"
+          ],
+          "remediation_template_ref": "sbom/add_syft_step",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        }
+      ]
+    },
+    {
+      "id": "approval_gates",
+      "name": "Deployment Approval Gates",
+      "weight": 6,
+      "enabled": true,
+      "description": "Human approval is required before deployment to production environments.",
+      "controls": [
+        {
+          "id": "ag-001",
+          "category_id": "approval_gates",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [
+            "GitHub Environments protection rules",
+            "GitLab Protected Environments"
+          ],
+          "remediation_template_ref": "approval/add_environment_protection",
+          "source": "deterministic",
+          "weight_contribution": 0.0
+        }
+      ]
+    }
+  ],
+  "grade_bands": [
+    {
+      "grade": "F",
+      "min_score": 0,
+      "max_score": 59
+    },
+    {
+      "grade": "D",
+      "min_score": 60,
+      "max_score": 69
+    },
+    {
+      "grade": "C",
+      "min_score": 70,
+      "max_score": 79
+    },
+    {
+      "grade": "B",
+      "min_score": 80,
+      "max_score": 89
+    },
+    {
+      "grade": "A",
+      "min_score": 90,
+      "max_score": 100
+    }
+  ]
+}

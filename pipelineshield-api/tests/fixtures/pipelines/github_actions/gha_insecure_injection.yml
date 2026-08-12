@@ -1,0 +1,27 @@
+# Fixture: GitHub Actions with expression injection and pwn-request patterns
+# Seeded gaps: expression-injection (sci-002), pwn-request (sci-002)
+# All credential-like values are SYNTHETIC PLACEHOLDERS.
+
+name: insecure-injection-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request_target:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  process-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # SEEDED GAP: direct interpolation of untrusted issue title into shell
+      - name: Print issue title
+        run: |
+          echo "Processing: ${{ github.event.issue.title }}"

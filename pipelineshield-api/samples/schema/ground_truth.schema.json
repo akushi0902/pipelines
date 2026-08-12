@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pipelineshield.internal/schemas/ground_truth/v1",
+  "title": "GroundTruthManifest",
+  "description": "Machine-readable ground-truth manifest for a PipelineShield sample pipeline corpus entry.",
+  "type": "object",
+  "required": ["sample_id", "name", "format", "variant", "catalogue_version_min", "seeded_gaps"],
+  "additionalProperties": false,
+  "properties": {
+    "sample_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]{3,80}$",
+      "description": "Stable unique slug for this sample (lower-kebab-case)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 255,
+      "description": "Human-readable display name shown in the sample selector."
+    },
+    "format": {
+      "type": "string",
+      "enum": ["github_actions", "gitlab_ci", "jenkins"],
+      "description": "Pipeline format identifier."
+    },
+    "variant": {
+      "type": "string",
+      "enum": ["insecure", "partial", "hardened"],
+      "description": "Hardening state of this sample."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1024,
+      "description": "Brief description of what this sample demonstrates."
+    },
+    "catalogue_version_min": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Minimum catalogue version where this manifest is valid."
+    },
+    "seeded_gaps": {
+      "type": "array",
+      "description": "Deliberately introduced security gaps that PipelineShield should detect.",
+      "items": {
+        "type": "object",
+        "required": ["control_id", "category_id", "expected_severity", "expected_line_anchor", "rationale"],
+        "additionalProperties": false,
+        "properties": {
+          "control_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{1,30}$",
+            "description": "Catalogue control identifier (e.g. sh-001)."
+          },
+          "category_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{1,50}$",
+            "description": "Catalogue category identifier (e.g. secrets_hygiene)."
+          },
+          "expected_severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low", "info"],
+            "description": "Expected finding severity level."
+          },
+          "expected_line_anchor": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "1-indexed line in the definition file where evidence is expected."
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 512,
+            "description": "Explanation of why this gap is present and detectable."
+          }
+        }
+      }
+    },
+    "expected_not_assessable": {
+      "type": "array",
+      "description": "Constructs expected to produce NOT_ASSESSABLE coverage limitations.",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["reason", "line_range_start", "line_range_end"],
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 256,
+            "description": "Why this construct cannot be automatically assessed."
+          },
+          "line_range_start": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "First line of the unassessable region."
+          },
+          "line_range_end": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Last line of the unassessable region (inclusive)."
+          },
+          "fragment_kind": {
+            "type": "string",
+            "description": "Kind of unresolved fragment (e.g. scripted_groovy, unresolved_include)."
+          }
+        }
+      }
+    },
+    "expected_min_remediations": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Minimum number of remediation suggestions expected in the report."
+    }
+  }
+}

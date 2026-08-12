@@ -1,0 +1,17 @@
+// Scripted Groovy Jenkinsfile fixture — fully scripted body.
+// Expected: high not_assessable count, populated banner payload, empty missing set.
+// All security controls are Not Assessable because the content is scripted Groovy.
+node {
+    stage('Checkout') {
+        checkout scm
+    }
+    stage('Build') {
+        sh 'mvn clean package -DskipTests'
+    }
+    stage('Test') {
+        sh 'mvn test'
+    }
+    stage('Deploy') {
+        sh 'kubectl apply -f deploy/'
+    }
+}

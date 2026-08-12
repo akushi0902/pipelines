@@ -1,0 +1,53 @@
+# Synthetic partial variant: Node.js service
+# Present: sh-001, lp-001, lp-002, sci-001, sa-001, ds-001
+# Gaps: sh-002 (no secret scanner), as-001 (no signing), as-002 (no provenance),
+#       sbom-001 (no SBOM), ds-002 (no container scan), ag-001 (no approval gate)
+
+name: node-service-partial-ci
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      # PRESENT sa-001: SAST (semgrep)
+      - name: SAST (semgrep)
+        uses: returntocorp/semgrep-action@fcd5ab7459e8d91cb1777481980d1b18b4fc6735 # v1.124
+        with:
+          config: p/owasp-top-ten
+
+      # PRESENT ds-001: dependency audit
+      - name: Dependency scan
+        run: npm audit --audit-level=high
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Build Docker image
+        run: docker build -t node-service:${{ github.sha }} .
+
+      # GAP sh-002: no gitleaks or equivalent secret scanner step
+      # GAP as-001: no cosign image signing step
+      # GAP as-002: no SLSA provenance attestation step
+      # GAP sbom-001: no syft or equivalent SBOM generation step
+      # GAP ds-002: no trivy or equivalent container image scan
+      # GAP ag-001: no environment with required reviewers for production deploy
+      - name: Push Docker image
+        run: docker push node-service:${{ github.sha }}

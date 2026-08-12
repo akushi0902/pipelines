@@ -1,0 +1,47 @@
+# Synthetic insecure variant: Node.js service
+# Seeded gaps: sh-001 (hardcoded credential), sh-002 (no secret scanner),
+#              sa-001 (no SAST step)
+# All credential-like values are SYNTHETIC PLACEHOLDERS — not real secrets.
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  # GAP sh-001: hardcoded credential-shaped literal (SYNTHETIC PLACEHOLDER)
+  # EXAMPLE_NPM_TOKEN below is a synthetic placeholder that resembles a GitHub PAT
+  # to exercise the redactor pattern set — this is NOT a real secret.
+  NPM_AUTH_TOKEN: "ghp_EXAMPLEsyntheticNOTREALbbbbbbbbbbbbbb"
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+
+default:
+  image: node:22-alpine
+
+# GAP sh-002: no gitleaks or detect-secrets job in pipeline
+# GAP sa-001: no semgrep or eslint-security SAST job in pipeline
+
+test:
+  stage: test
+  script:
+    - npm ci
+    - npm test
+
+build-image:
+  stage: build
+  image: docker:27.5.1
+  services:
+    - docker:27.5.1-dind
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t "$IMAGE_NAME" .
+    - docker push "$IMAGE_NAME"
+  only:
+    - main
+
+deploy:
+  stage: deploy
+  script:
+    - ./scripts/deploy.sh production
+  only:
+    - main

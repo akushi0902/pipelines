@@ -1,0 +1,61 @@
+/* Design tokens — semantic CSS custom properties for light and dark themes.
+   Apply the .dark class on <html> to activate dark mode.
+   No component should hardcode a colour value outside this file. */
+
+:root {
+  --color-surface: #ffffff;
+  --color-surface-raised: #f9fafb;
+  --color-surface-overlay: #f3f4f6;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-disabled: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-border-focus: #3b82f6;
+  --color-brand: #1a56db;
+  --color-brand-hover: #1e429f;
+  --color-brand-text: #ffffff;
+  --color-sev-critical: #dc2626;
+  --color-sev-high: #ea580c;
+  --color-sev-medium: #d97706;
+  --color-sev-low: #16a34a;
+  --color-sev-info: #2563eb;
+  --color-success: #16a34a;
+  --color-success-surface: #f0fdf4;
+  --color-warning: #d97706;
+  --color-warning-surface: #fffbeb;
+  --color-error: #dc2626;
+  --color-error-surface: #fef2f2;
+  --color-info: #2563eb;
+  --color-info-surface: #eff6ff;
+  --color-dropzone-active: #dbeafe;
+  --color-dropzone-border: #93c5fd;
+}
+
+.dark {
+  --color-surface: #111827;
+  --color-surface-raised: #1f2937;
+  --color-surface-overlay: #374151;
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #9ca3af;
+  --color-text-disabled: #6b7280;
+  --color-border: #374151;
+  --color-border-focus: #60a5fa;
+  --color-brand: #3b82f6;
+  --color-brand-hover: #2563eb;
+  --color-brand-text: #ffffff;
+  --color-sev-critical: #f87171;
+  --color-sev-high: #fb923c;
+  --color-sev-medium: #fbbf24;
+  --color-sev-low: #4ade80;
+  --color-sev-info: #60a5fa;
+  --color-success: #4ade80;
+  --color-success-surface: #052e16;
+  --color-warning: #fbbf24;
+  --color-warning-surface: #1c1200;
+  --color-error: #f87171;
+  --color-error-surface: #1c0808;
+  --color-info: #60a5fa;
+  --color-info-surface: #0c1a33;
+  --color-dropzone-active: #1e3a5f;
+  --color-dropzone-border: #3b82f6;
+}

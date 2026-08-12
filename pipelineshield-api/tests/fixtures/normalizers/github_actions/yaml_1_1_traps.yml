@@ -1,0 +1,26 @@
+# This file tests that YAML 1.1 boolean traps are handled correctly.
+# Under YAML 1.1: on → True, NO → False, Yes → True, off → False, y → True, n → False
+# Under YAML 1.2 (what we use): all of these remain strings.
+name: yaml-traps
+on:
+  push:
+    branches: [main]
+
+# This key name 'on' must NOT become boolean True
+# The values below must remain strings, not booleans
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      FEATURE_FLAG: "NO"
+      ENABLED: "Yes"
+      STATUS: "off"
+      SHORT_YES: "y"
+      SHORT_NO: "n"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Echo flags
+        run: |
+          echo "Flag: $FEATURE_FLAG"
+          echo "Enabled: $ENABLED"

@@ -1,0 +1,502 @@
+{
+  "$defs": {
+    "ActionRef": {
+      "description": "A parsed reference to a third-party (or local/docker) action.\n\npin_form values:\n  sha     — 40-hex immutable commit SHA (most secure)\n  tag     — semver or arbitrary tag (mutable pointer)\n  branch  — branch name (mutable, HEAD-tracking)\n  local   — ./relative-path to a local composite action\n  docker  — docker:// image reference",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version Ref"
+        },
+        "pin_form": {
+          "title": "Pin Form",
+          "type": "string"
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name",
+        "pin_form"
+      ],
+      "title": "ActionRef",
+      "type": "object"
+    },
+    "Anchor": {
+      "description": "Source-location anchor: 1-based line/column in the original YAML.",
+      "properties": {
+        "start_line": {
+          "minimum": 1,
+          "title": "Start Line",
+          "type": "integer"
+        },
+        "start_column": {
+          "minimum": 1,
+          "title": "Start Column",
+          "type": "integer"
+        },
+        "end_line": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Line"
+        }
+      },
+      "required": [
+        "start_line",
+        "start_column"
+      ],
+      "title": "Anchor",
+      "type": "object"
+    },
+    "CoverageReport": {
+      "description": "Per-normalization coverage accounting.",
+      "properties": {
+        "unresolved": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/UnresolvedFragment"
+          },
+          "title": "Unresolved",
+          "type": "array"
+        },
+        "constructs_handled": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Constructs Handled",
+          "type": "array"
+        },
+        "constructs_excluded": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Constructs Excluded",
+          "type": "array"
+        }
+      },
+      "title": "CoverageReport",
+      "type": "object"
+    },
+    "EffectivePermissions": {
+      "description": "Permissions declaration with explicit semantic state.",
+      "properties": {
+        "scope": {
+          "title": "Scope",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "grants": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Grants",
+          "type": "object"
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "scope",
+        "state"
+      ],
+      "title": "EffectivePermissions",
+      "type": "object"
+    },
+    "Job": {
+      "description": "A GitHub Actions job.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "runs_on": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runs On"
+        },
+        "steps": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "title": "Steps",
+          "type": "array"
+        },
+        "permissions": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/EffectivePermissions"
+            }
+          ],
+          "default": {
+            "scope": "job",
+            "state": "absent",
+            "grants": {},
+            "anchor": null
+          }
+        },
+        "needs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Needs",
+          "type": "array"
+        },
+        "condition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Condition"
+        },
+        "matrix": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Matrix"
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Job",
+      "type": "object"
+    },
+    "SecretRef": {
+      "description": "A reference to a secret-shaped value within a workflow expression.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "expression": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expression"
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name",
+        "source"
+      ],
+      "title": "SecretRef",
+      "type": "object"
+    },
+    "Step": {
+      "description": "A single step within a GitHub Actions job.",
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "uses": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uses"
+        },
+        "run": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run"
+        },
+        "env": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Env",
+          "type": "object"
+        },
+        "with_inputs": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "With Inputs",
+          "type": "object"
+        },
+        "continue_on_error": {
+          "default": false,
+          "title": "Continue On Error",
+          "type": "boolean"
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "action_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ActionRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "secret_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SecretRef"
+          },
+          "title": "Secret Refs",
+          "type": "array"
+        }
+      },
+      "title": "Step",
+      "type": "object"
+    },
+    "UnresolvedFragment": {
+      "description": "A construct that could not be assessed locally.",
+      "properties": {
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "locator": {
+          "title": "Locator",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "locator",
+        "reason"
+      ],
+      "title": "UnresolvedFragment",
+      "type": "object"
+    }
+  },
+  "description": "Versioned intermediate representation of a CI/CD pipeline definition.",
+  "properties": {
+    "ir_version": {
+      "default": "1.0",
+      "title": "Ir Version",
+      "type": "string"
+    },
+    "source_format": {
+      "title": "Source Format",
+      "type": "string"
+    },
+    "triggers": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Triggers",
+      "type": "array"
+    },
+    "trigger_details": {
+      "default": {},
+      "title": "Trigger Details",
+      "type": "object"
+    },
+    "permissions": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EffectivePermissions"
+        }
+      ],
+      "default": {
+        "scope": "workflow",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      }
+    },
+    "jobs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Job"
+      },
+      "title": "Jobs",
+      "type": "array"
+    },
+    "coverage_report": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CoverageReport"
+        }
+      ],
+      "default": {
+        "unresolved": [],
+        "constructs_handled": [],
+        "constructs_excluded": []
+      }
+    },
+    "trigger_anchor": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Anchor"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "source_format"
+  ],
+  "title": "PipelineIR",
+  "type": "object"
+}

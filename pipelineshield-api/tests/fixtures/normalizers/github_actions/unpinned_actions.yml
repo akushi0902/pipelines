@@ -1,0 +1,14 @@
+name: unpinned
+on: push
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@main
+      - name: Deploy
+        uses: some-org/deploy-action@v2.1.0
+        env:
+          API_KEY: ${{ secrets.DEPLOY_API_KEY }}
+          ENV_TOKEN: ${{ env.CI_TOKEN }}

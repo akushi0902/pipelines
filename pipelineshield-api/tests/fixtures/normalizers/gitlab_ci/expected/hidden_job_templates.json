@@ -1,0 +1,202 @@
+{
+  "ir_version": "1.0",
+  "source_format": "gitlab_ci",
+  "triggers": [
+    "push"
+  ],
+  "trigger_details": {
+    "push": {
+      "if": "$CI_PIPELINE_SOURCE == \"push\""
+    }
+  },
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "unit-test",
+      "name": "unit-test",
+      "runs_on": "python:3.11",
+      "steps": [
+        {
+          "id": null,
+          "name": "before_script",
+          "uses": null,
+          "run": "pip install pytest",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": [
+            {
+              "name": "CI_JOB_TOKEN",
+              "source": "env",
+              "expression": "$CI_JOB_TOKEN",
+              "anchor": null
+            }
+          ]
+        },
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "pytest tests/ -v",
+          "env": {
+            "CI_JOB_TOKEN": "$CI_JOB_TOKEN"
+          },
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": [
+            {
+              "name": "CI_JOB_TOKEN",
+              "source": "env",
+              "expression": "$CI_JOB_TOKEN",
+              "anchor": null
+            }
+          ]
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    },
+    {
+      "id": "production-deploy",
+      "name": "production-deploy",
+      "runs_on": "alpine:3.18",
+      "steps": [
+        {
+          "id": null,
+          "name": "before_script",
+          "uses": null,
+          "run": "apk add --no-cache curl",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        },
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "curl -X POST $PROD_DEPLOY_URL",
+          "env": {
+            "ENVIRONMENT": "production"
+          },
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": "$CI_PIPELINE_SOURCE == \"push\"",
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    },
+    {
+      "id": "staging-deploy",
+      "name": "staging-deploy",
+      "runs_on": "alpine:3.18",
+      "steps": [
+        {
+          "id": null,
+          "name": "before_script",
+          "uses": null,
+          "run": "apk add --no-cache curl",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        },
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "curl -X POST $DEPLOY_URL",
+          "env": {
+            "ENVIRONMENT": "staging"
+          },
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": "$CI_COMMIT_BRANCH == \"main\"",
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": [
+      "stages",
+      "include_local",
+      "workflow_rules",
+      "job_script",
+      "job_before_script",
+      "job_after_script",
+      "job_image",
+      "job_tags",
+      "job_variables",
+      "job_rules",
+      "job_only_except",
+      "job_extends",
+      "job_reference",
+      "global_default_inheritance",
+      "hidden_job_templates",
+      "job_needs"
+    ],
+    "constructs_excluded": [
+      "include_remote",
+      "include_project",
+      "include_template",
+      "include_component",
+      "trigger",
+      "release",
+      "artifacts",
+      "cache",
+      "parallel_matrix",
+      "environment",
+      "dast_configuration"
+    ],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": null
+}

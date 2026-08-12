@@ -1,0 +1,21 @@
+{
+  "description": "All controls PARTIAL with default 0.5 credit — expected score 50.0, grade F",
+  "verdicts": [
+    {"control_id": "sh-001", "category_id": "secrets_hygiene", "verdict": "partial"},
+    {"control_id": "sh-002", "category_id": "secrets_hygiene", "verdict": "partial"},
+    {"control_id": "as-001", "category_id": "artifact_signing", "verdict": "partial"},
+    {"control_id": "as-002", "category_id": "artifact_signing", "verdict": "partial"},
+    {"control_id": "sa-001", "category_id": "static_analysis", "verdict": "partial"},
+    {"control_id": "ds-001", "category_id": "dependency_scanning", "verdict": "partial"},
+    {"control_id": "ds-002", "category_id": "dependency_scanning", "verdict": "partial"},
+    {"control_id": "lp-001", "category_id": "least_privilege", "verdict": "partial"},
+    {"control_id": "lp-002", "category_id": "least_privilege", "verdict": "partial"},
+    {"control_id": "iac-001", "category_id": "iac_misconfiguration", "verdict": "partial"},
+    {"control_id": "sci-001", "category_id": "supply_chain_integrity", "verdict": "partial"},
+    {"control_id": "sci-002", "category_id": "supply_chain_integrity", "verdict": "partial"},
+    {"control_id": "sbom-001", "category_id": "sbom", "verdict": "partial"},
+    {"control_id": "ag-001", "category_id": "approval_gates", "verdict": "partial"}
+  ],
+  "expected_score": "50.0",
+  "expected_grade": "F"
+}

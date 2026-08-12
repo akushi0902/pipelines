@@ -1,0 +1,9 @@
+name: bad-pipeline
+# This file contains intentionally malformed YAML for testing
+# Tabs are not permitted in YAML (only spaces):
+	on:
+  push:
+    branches: [main]
+	jobs:
+  build:
+    runs-on: ubuntu-latest

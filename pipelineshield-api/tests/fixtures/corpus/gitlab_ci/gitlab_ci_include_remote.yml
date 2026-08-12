@@ -1,0 +1,38 @@
+# Synthetic NOT ASSESSABLE fixture: includes a remote URL that cannot be resolved.
+# The include:remote directive points to a synthetic unreachable URL.
+# This file exercises the Not Assessable classification for unresolvable GitLab includes.
+
+# NOT ASSESSABLE: include:remote points to https://config.synthetic.example.invalid/
+# which is an intentionally unreachable synthetic hostname. The included configuration
+# cannot be fetched at analysis time so control coverage cannot be determined.
+
+include:
+  - remote: "https://config.synthetic.example.invalid/shared-security-config.yml"
+
+stages:
+  - test
+  - build
+
+variables:
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+
+default:
+  image: python:3.12-slim
+
+test:
+  stage: test
+  script:
+    - pip install -r requirements.txt
+    - pytest tests/
+
+build-image:
+  stage: build
+  image: docker:27.5.1
+  services:
+    - docker:27.5.1-dind
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t "$IMAGE_NAME" .
+    - docker push "$IMAGE_NAME"
+  only:
+    - main

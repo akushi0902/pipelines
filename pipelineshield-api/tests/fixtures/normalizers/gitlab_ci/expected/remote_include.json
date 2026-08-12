@@ -1,0 +1,132 @@
+{
+  "ir_version": "1.0",
+  "source_format": "gitlab_ci",
+  "triggers": [
+    "push"
+  ],
+  "trigger_details": {
+    "push": {
+      "if": "$CI_PIPELINE_SOURCE == \"push\""
+    }
+  },
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "deploy-app",
+      "name": "deploy-app",
+      "runs_on": "alpine:3.18",
+      "steps": [
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "./deploy.sh",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": "$CI_PIPELINE_SOURCE == \"push\"",
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    },
+    {
+      "id": "test-app",
+      "name": "test-app",
+      "runs_on": "python:3.11",
+      "steps": [
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "pytest tests/",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [
+      {
+        "kind": "include_remote",
+        "locator": "https://raw.githubusercontent.com/my-org/ci-templates/main/security.yml",
+        "reason": "Remote include 'https://raw.githubusercontent.com/my-org/ci-templates/main/security.yml' requires an outbound HTTP request — never fetched; marked Not Assessable."
+      },
+      {
+        "kind": "include_project",
+        "locator": "my-org/ci-templates:/.gitlab/ci/test-templates.yml@main",
+        "reason": "Project include 'my-org/ci-templates:/.gitlab/ci/test-templates.yml@main' requires a GitLab API call — never fetched; marked Not Assessable."
+      },
+      {
+        "kind": "include_template",
+        "locator": "SAST.gitlab-ci.yml",
+        "reason": "GitLab CI template include 'SAST.gitlab-ci.yml' requires access to the GitLab template library — never fetched; marked Not Assessable."
+      }
+    ],
+    "constructs_handled": [
+      "stages",
+      "include_local",
+      "workflow_rules",
+      "job_script",
+      "job_before_script",
+      "job_after_script",
+      "job_image",
+      "job_tags",
+      "job_variables",
+      "job_rules",
+      "job_only_except",
+      "job_extends",
+      "job_reference",
+      "global_default_inheritance",
+      "hidden_job_templates",
+      "job_needs"
+    ],
+    "constructs_excluded": [
+      "include_remote",
+      "include_project",
+      "include_template",
+      "include_component",
+      "trigger",
+      "release",
+      "artifacts",
+      "cache",
+      "parallel_matrix",
+      "environment",
+      "dast_configuration"
+    ],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": null
+}

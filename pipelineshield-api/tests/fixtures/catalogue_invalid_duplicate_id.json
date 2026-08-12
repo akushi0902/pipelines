@@ -1,0 +1,46 @@
+{
+  "_comment": "Invalid: category id 'secrets_hygiene' appears twice",
+  "categories": [
+    {
+      "id": "secrets_hygiene",
+      "name": "Secrets Hygiene",
+      "weight": 50,
+      "enabled": true,
+      "description": "First entry.",
+      "controls": [
+        {
+          "id": "sh-001",
+          "category_id": "secrets_hygiene",
+          "severity": "critical",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": null
+        }
+      ]
+    },
+    {
+      "id": "secrets_hygiene",
+      "name": "Secrets Hygiene Duplicate",
+      "weight": 50,
+      "enabled": true,
+      "description": "Second entry — duplicate id.",
+      "controls": [
+        {
+          "id": "sh-002",
+          "category_id": "secrets_hygiene",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": null
+        }
+      ]
+    }
+  ],
+  "grade_bands": [
+    {"grade": "F", "min_score": 0,  "max_score": 59},
+    {"grade": "D", "min_score": 60, "max_score": 69},
+    {"grade": "C", "min_score": 70, "max_score": 79},
+    {"grade": "B", "min_score": 80, "max_score": 89},
+    {"grade": "A", "min_score": 90, "max_score": 100}
+  ]
+}

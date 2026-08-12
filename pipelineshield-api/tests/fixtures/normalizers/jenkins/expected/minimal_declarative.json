@@ -1,0 +1,128 @@
+{
+  "ir_version": "1.0",
+  "source_format": "jenkins",
+  "triggers": [],
+  "trigger_details": {},
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "Build",
+      "name": "Build",
+      "runs_on": "node:20",
+      "steps": [
+        {
+          "id": null,
+          "name": "sh",
+          "uses": null,
+          "run": "npm ci",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        },
+        {
+          "id": null,
+          "name": "sh",
+          "uses": null,
+          "run": "npm run build",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {
+        "extraction_method": "heuristic",
+        "confidence": 0.7
+      }
+    },
+    {
+      "id": "Test",
+      "name": "Test",
+      "runs_on": "node:20",
+      "steps": [
+        {
+          "id": null,
+          "name": "sh",
+          "uses": null,
+          "run": "npm test",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {
+        "extraction_method": "heuristic",
+        "confidence": 0.7
+      }
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": [
+      "pipeline_block",
+      "agent_any_none",
+      "agent_label",
+      "agent_docker_image",
+      "stages_block",
+      "stage_block",
+      "steps_block",
+      "parallel_block",
+      "environment_credentials",
+      "with_credentials",
+      "triggers_block",
+      "options_block",
+      "post_block"
+    ],
+    "constructs_excluded": [
+      "when_block",
+      "input_block",
+      "matrix_block",
+      "agent_kubernetes_yaml",
+      "lock_resource",
+      "retry_block",
+      "timeout_block",
+      "tool_block",
+      "changelog_block",
+      "deploy_artifact"
+    ],
+    "coverage_ratio": 1.0
+  },
+  "trigger_anchor": {
+    "start_line": 2,
+    "start_column": 1,
+    "end_line": 22
+  }
+}

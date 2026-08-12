@@ -1,0 +1,99 @@
+# Synthetic hardened baseline: Node.js service — all nine control categories present.
+# All credentials injected via GitLab CI/CD variables. No real tokens committed.
+
+stages:
+  - secret-scan
+  - sast
+  - dependency-scan
+  - iac-scan
+  - test
+  - build
+  - container-scan
+  - sign-publish
+
+variables:
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+  DOCKER_TLS_CERTDIR: "/certs"
+
+# CONTROL lp-001 / lp-002: restrict protected variables; jobs use least-privilege tokens
+default:
+  image: node:22-alpine
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+
+# CONTROL sh-002: secret scanner (gitleaks)
+secret-scan:
+  stage: secret-scan
+  image: zricethezav/gitleaks:v8.25.1
+  script:
+    - gitleaks detect --source . --exit-code 1
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# CONTROL sa-001: SAST (semgrep)
+semgrep-sast:
+  stage: sast
+  image: semgrep/semgrep:1.124.0
+  script:
+    - semgrep --config p/owasp-top-ten --error
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# CONTROL ds-001: SCA dependency audit
+dependency-audit:
+  stage: dependency-scan
+  script:
+    - npm audit --audit-level=high
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# CONTROL iac-001: IaC scan (checkov)
+checkov-iac:
+  stage: iac-scan
+  image: bridgecrew/checkov:3.2.400
+  script:
+    - checkov -d infra/ --framework terraform --compact --quiet
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+test:
+  stage: test
+  script:
+    - npm test
+
+build-image:
+  stage: build
+  image: docker:27.5.1
+  services:
+    - docker:27.5.1-dind
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t "$IMAGE_NAME" .
+    - docker push "$IMAGE_NAME"
+
+# CONTROL ds-002: container image scan (trivy)
+trivy-container:
+  stage: container-scan
+  image: aquasec/trivy:0.62.1
+  script:
+    - trivy image --exit-code 1 --severity CRITICAL,HIGH "$IMAGE_NAME"
+  needs: [build-image]
+
+# CONTROL sbom-001: SBOM generation (syft)
+# CONTROL as-001: artifact signing (cosign keyless)
+# CONTROL as-002: SLSA provenance
+sign-publish:
+  stage: sign-publish
+  image: cgr.dev/chainguard/cosign:latest
+  script:
+    - syft "$IMAGE_NAME" -o spdx-json > sbom.spdx.json
+    - cosign sign --yes "$IMAGE_NAME"
+    - cosign attest --yes --predicate sbom.spdx.json "$IMAGE_NAME"
+  needs: [trivy-container]
+  environment:
+    # CONTROL ag-001: manual approval gate via protected environment
+    name: production
+    action: start
+  when: manual

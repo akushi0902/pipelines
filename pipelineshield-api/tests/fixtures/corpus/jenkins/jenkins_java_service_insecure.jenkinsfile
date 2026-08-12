@@ -1,0 +1,51 @@
+// Synthetic insecure variant: Java service
+// Seeded gaps: sh-001 (hardcoded credential), lp-001 (overbroad env block),
+//              sci-001 (image pinned by tag, not SHA)
+// All credential-like values are SYNTHETIC PLACEHOLDERS — not real secrets.
+
+pipeline {
+    agent {
+        docker {
+            // GAP sci-001: Docker image referenced by mutable tag, not pinned SHA
+            image 'eclipse-temurin:21-jdk'
+        }
+    }
+
+    environment {
+        // GAP lp-001: registry password exposed in global env block (overbroad)
+        // EXAMPLE_REGISTRY_PASS below is a SYNTHETIC PLACEHOLDER resembling a GitHub PAT
+        // to exercise the redactor — this is NOT a real secret.
+        REGISTRY_PASS = 'ghp_EXAMPLEsyntheticNOTREALcccccccccccccc'
+        REGISTRY_USER = 'ci-bot'
+        IMAGE_NAME = "registry.example.synthetic.internal/java-service:${GIT_COMMIT}"
+    }
+
+    // GAP sh-001: credential-shaped literal in environment block (see REGISTRY_PASS above)
+
+    stages {
+        stage('Test') {
+            steps {
+                sh './mvnw test'
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                sh '''
+                    docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS" registry.example.synthetic.internal
+                    docker build -t "$IMAGE_NAME" .
+                    docker push "$IMAGE_NAME"
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh './scripts/deploy.sh production "${GIT_COMMIT}"'
+            }
+        }
+    }
+
+    // No secret scan, no SAST, no dependency scan, no container scan,
+    // no IaC scan, no SBOM, no signing, no manual approval gate.
+}

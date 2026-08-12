@@ -1,0 +1,38 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        surface: 'var(--color-surface)',
+        'surface-raised': 'var(--color-surface-raised)',
+        'surface-overlay': 'var(--color-surface-overlay)',
+        'text-primary': 'var(--color-text-primary)',
+        'text-secondary': 'var(--color-text-secondary)',
+        'text-disabled': 'var(--color-text-disabled)',
+        border: 'var(--color-border)',
+        'border-focus': 'var(--color-border-focus)',
+        brand: 'var(--color-brand)',
+        'brand-hover': 'var(--color-brand-hover)',
+        'brand-text': 'var(--color-brand-text)',
+        'sev-critical': 'var(--color-sev-critical)',
+        'sev-high': 'var(--color-sev-high)',
+        'sev-medium': 'var(--color-sev-medium)',
+        'sev-low': 'var(--color-sev-low)',
+        'sev-info': 'var(--color-sev-info)',
+        success: 'var(--color-success)',
+        'success-surface': 'var(--color-success-surface)',
+        warning: 'var(--color-warning)',
+        'warning-surface': 'var(--color-warning-surface)',
+        error: 'var(--color-error)',
+        'error-surface': 'var(--color-error-surface)',
+        info: 'var(--color-info)',
+        'info-surface': 'var(--color-info-surface)',
+        'dropzone-active': 'var(--color-dropzone-active)',
+        'dropzone-border': 'var(--color-dropzone-border)',
+      },
+    },
+  },
+  plugins: [],
+};

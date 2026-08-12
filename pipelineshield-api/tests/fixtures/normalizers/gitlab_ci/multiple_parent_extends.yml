@@ -1,0 +1,44 @@
+stages:
+  - test
+  - deploy
+
+.docker-config:
+  image: docker:24
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+
+.retry-config:
+  retry:
+    max: 2
+    when: runner_system_failure
+  timeout: 10m
+
+.deploy-base:
+  stage: deploy
+  variables:
+    ENVIRONMENT: staging
+  script:
+    - echo "base deploy"
+
+# Job extends two parents — last-parent-wins for conflicts
+build-image:
+  extends:
+    - .docker-config
+    - .retry-config
+  stage: test
+  script:
+    - docker build -t myapp .
+    - docker push myapp
+
+# Job extends three parents; .deploy-base provides stage
+production-deploy:
+  extends:
+    - .docker-config
+    - .retry-config
+    - .deploy-base
+  variables:
+    ENVIRONMENT: production
+  script:
+    - echo "deploying to production"

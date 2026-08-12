@@ -1,0 +1,81 @@
+// Synthetic partial variant: Java service
+// Present: sh-002, sa-001, ds-001, sci-001, ag-001, lp-001
+// Gaps: as-001 (no signing), iac-001 (no IaC scan), sbom-001 (no SBOM), ds-002 (no container scan)
+
+pipeline {
+    agent {
+        docker {
+            // PRESENT sci-001: image pinned by digest
+            image 'eclipse-temurin:21-jdk@sha256:SYNTHETIC_DIGEST_PLACEHOLDER_0000000000000000000000000000000000000000'
+        }
+    }
+
+    options {
+        disableConcurrentBuilds()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    stages {
+        // PRESENT sh-002: secret scanner
+        stage('Secret Scan') {
+            steps {
+                sh 'gitleaks detect --source . --exit-code 1'
+            }
+        }
+
+        // PRESENT sa-001: SAST
+        stage('SAST') {
+            steps {
+                sh 'semgrep --config p/java --error .'
+            }
+        }
+
+        // PRESENT ds-001: SCA dependency scan
+        stage('Dependency Scan') {
+            steps {
+                sh './mvnw org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh './mvnw test'
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                // PRESENT lp-001: credentials scoped to withCredentials block
+                withCredentials([usernamePassword(
+                    credentialsId: 'registry-credentials',
+                    usernameVariable: 'REGISTRY_USER',
+                    passwordVariable: 'REGISTRY_PASS'
+                )]) {
+                    sh '''
+                        docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS" registry.example.synthetic.internal
+                        docker build -t "registry.example.synthetic.internal/java-service:${GIT_COMMIT}" .
+                        docker push "registry.example.synthetic.internal/java-service:${GIT_COMMIT}"
+                    '''
+                }
+            }
+        }
+
+        // GAP ds-002: no trivy container scan stage
+        // GAP iac-001: no checkov IaC scan stage
+        // GAP as-001: no cosign signing stage
+        // GAP sbom-001: no syft SBOM stage
+
+        // PRESENT ag-001: manual approval gate
+        stage('Approve Deploy') {
+            steps {
+                input message: 'Deploy to production?', ok: 'Approve'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh './scripts/deploy.sh production "${GIT_COMMIT}"'
+            }
+        }
+    }
+}

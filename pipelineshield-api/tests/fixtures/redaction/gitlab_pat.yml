@@ -1,0 +1,6 @@
+# Sample pipeline with a GitLab PAT
+name: deploy
+env:
+  GL_TOKEN: glpat-xYzAbCdEfGhIjKlMnOpQr
+steps:
+  - run: git clone https://oauth2:${GL_TOKEN}@gitlab.example.com/org/repo.git

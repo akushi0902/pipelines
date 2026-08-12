@@ -1,0 +1,6 @@
+# Sample pipeline with a high-entropy secret not matching any explicit pattern
+name: custom-auth
+env:
+  CUSTOM_AUTH: kX8mN2qR5vY9wZ3pL6hJ7dA0sG4tC1nBfE2uI
+steps:
+  - run: ./deploy.sh

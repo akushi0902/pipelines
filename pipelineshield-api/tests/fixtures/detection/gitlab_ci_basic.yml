@@ -1,0 +1,25 @@
+stages:
+  - build
+  - test
+  - deploy
+
+build:
+  stage: build
+  image: python:3.12
+  script:
+    - pip install -e .[dev]
+    - python -m build
+
+test:
+  stage: test
+  image: python:3.12
+  script:
+    - pip install -e .[dev]
+    - pytest
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying..."
+  only:
+    - main

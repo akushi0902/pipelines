@@ -1,0 +1,31 @@
+stages:
+  - security
+  - test
+  - deploy
+
+# Three different include types — all must be Not Assessable
+include:
+  - remote: https://raw.githubusercontent.com/my-org/ci-templates/main/security.yml
+  - project: my-org/ci-templates
+    file: /.gitlab/ci/test-templates.yml
+    ref: main
+  - template: SAST.gitlab-ci.yml
+
+variables:
+  DEPLOY_TOKEN: $CI_DEPLOY_TOKEN
+
+test-app:
+  stage: test
+  image: python:3.11
+  script:
+    - pytest tests/
+
+deploy-app:
+  stage: deploy
+  image: alpine:3.18
+  script:
+    - ./deploy.sh
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
+    - when: never

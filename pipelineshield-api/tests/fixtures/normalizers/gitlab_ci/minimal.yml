@@ -1,0 +1,16 @@
+stages:
+  - build
+  - test
+
+build-job:
+  stage: build
+  image: node:20
+  script:
+    - npm ci
+    - npm run build
+
+test-job:
+  stage: test
+  image: node:20
+  script:
+    - npm test

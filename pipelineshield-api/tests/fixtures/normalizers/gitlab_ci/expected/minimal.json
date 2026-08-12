@@ -1,0 +1,110 @@
+{
+  "ir_version": "1.0",
+  "source_format": "gitlab_ci",
+  "triggers": [],
+  "trigger_details": {},
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "build-job",
+      "name": "build-job",
+      "runs_on": "node:20",
+      "steps": [
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "npm ci\nnpm run build",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    },
+    {
+      "id": "test-job",
+      "name": "test-job",
+      "runs_on": "node:20",
+      "steps": [
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "npm test",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": [
+      "stages",
+      "include_local",
+      "workflow_rules",
+      "job_script",
+      "job_before_script",
+      "job_after_script",
+      "job_image",
+      "job_tags",
+      "job_variables",
+      "job_rules",
+      "job_only_except",
+      "job_extends",
+      "job_reference",
+      "global_default_inheritance",
+      "hidden_job_templates",
+      "job_needs"
+    ],
+    "constructs_excluded": [
+      "include_remote",
+      "include_project",
+      "include_template",
+      "include_component",
+      "trigger",
+      "release",
+      "artifacts",
+      "cache",
+      "parallel_matrix",
+      "environment",
+      "dast_configuration"
+    ],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": null
+}

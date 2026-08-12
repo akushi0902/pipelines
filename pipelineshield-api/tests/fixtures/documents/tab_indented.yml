@@ -1,0 +1,11 @@
+# Tab-indented pipeline fixture (uncommon but valid YAML with tabs in comments)
+name: tab-indented-ci
+on:
+  push:
+    branches: [main]
+jobs:
+	build:
+		runs-on: ubuntu-latest
+		steps:
+			- name: run tests
+			  run: npm test

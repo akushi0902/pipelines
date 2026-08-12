@@ -1,0 +1,110 @@
+{
+  "ir_version": "1.0",
+  "source_format": "github_actions",
+  "triggers": [
+    "pull_request_target",
+    "workflow_run"
+  ],
+  "trigger_details": {
+    "pull_request_target": {
+      "types": [
+        "opened",
+        "synchronize"
+      ]
+    },
+    "workflow_run": {
+      "workflows": [
+        "CI"
+      ],
+      "types": [
+        "completed"
+      ]
+    }
+  },
+  "permissions": {
+    "scope": "workflow",
+    "state": "explicit",
+    "grants": {
+      "contents": "read",
+      "pull-requests": "write"
+    },
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "comment",
+      "name": null,
+      "runs_on": "ubuntu-latest",
+      "steps": [
+        {
+          "id": null,
+          "name": "Comment on PR",
+          "uses": "actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea",
+          "run": null,
+          "env": {},
+          "with_inputs": {
+            "script": "github.rest.issues.createComment({\n  issue_number: context.issue.number,\n  body: 'Thanks for your contribution!'\n})\n",
+            "github-token": "${{ secrets.GITHUB_TOKEN }}"
+          },
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": {
+            "name": "actions/github-script",
+            "version_ref": "60a0d83039c74a4aee543508d2ffcb1c3799cdea",
+            "pin_form": "sha",
+            "anchor": null
+          },
+          "secret_refs": [
+            {
+              "name": "GITHUB_TOKEN",
+              "source": "secrets",
+              "expression": "secrets.GITHUB_TOKEN",
+              "anchor": null
+            }
+          ]
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "explicit",
+        "grants": {
+          "pull-requests": "write"
+        },
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": [
+      "triggers",
+      "workflow_permissions",
+      "jobs",
+      "job_permissions",
+      "steps",
+      "action_refs",
+      "secret_refs",
+      "matrix_static",
+      "needs"
+    ],
+    "constructs_excluded": [
+      "concurrency",
+      "environment",
+      "outputs",
+      "defaults",
+      "services",
+      "container"
+    ],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": {
+    "start_line": 2,
+    "start_column": 1,
+    "end_line": null
+  }
+}

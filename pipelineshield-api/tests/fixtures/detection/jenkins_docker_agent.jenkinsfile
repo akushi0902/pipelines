@@ -1,0 +1,33 @@
+pipeline {
+    agent {
+        docker {
+            image 'python:3.12-slim'
+            args '--user root'
+        }
+    }
+
+    stages {
+        stage('Install') {
+            steps {
+                sh 'pip install -e .[dev]'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'pytest --cov=src --cov-report=xml'
+            }
+        }
+        stage('Lint') {
+            steps {
+                sh 'ruff check .'
+                sh 'mypy src/'
+            }
+        }
+    }
+
+    post {
+        always {
+            cobertura coberturaReportFile: 'coverage.xml'
+        }
+    }
+}

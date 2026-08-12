@@ -1,0 +1,30 @@
+stages:
+  - lint
+  - test
+
+include:
+  - project: my-org/shared-ci
+    file: /templates/lint.yml
+    ref: main
+  - local: /ci/base.yml
+
+variables:
+  CI_REGISTRY_PASSWORD: $CI_REGISTRY_PASSWORD
+
+lint:
+  stage: lint
+  image: node:20
+  script:
+    - npm run lint
+  only:
+    - merge_requests
+    - main
+
+test:
+  stage: test
+  image: node:20
+  script:
+    - npm test
+  only:
+    - merge_requests
+    - main

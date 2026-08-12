@@ -1,0 +1,431 @@
+corpus_version: "1.0.0"
+catalogue_version: 1
+
+files:
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — hardened (all 9 control categories present)
+  # ---------------------------------------------------------------------------
+  - path: "github_actions/github_actions_node_service_hardened.yml"
+    format: github_actions
+    line_count: 100
+    seeded_gaps: []
+    not_assessable: []
+    negative_expectations:
+      - {control_id: sh-001, category: secrets_hygiene, rationale: "No hardcoded credentials; all values injected via secrets context"}
+      - {control_id: sh-002, category: secrets_hygiene, rationale: "gitleaks-action present and exit-code enforced"}
+      - {control_id: sa-001, category: static_analysis, rationale: "semgrep-action with owasp-top-ten and nodejs rulesets"}
+      - {control_id: ds-001, category: dependency_scanning, rationale: "npm audit with audit-level=high enforced"}
+      - {control_id: ds-002, category: dependency_scanning, rationale: "trivy-action scans built image with CRITICAL,HIGH fail"}
+      - {control_id: lp-001, category: least_privilege, rationale: "permissions block: contents=read, id-token=write only"}
+      - {control_id: lp-002, category: least_privilege, rationale: "No write-all permissions; no wildcard write grants"}
+      - {control_id: iac-001, category: iac_misconfiguration, rationale: "checkov-action runs on infra/ directory"}
+      - {control_id: sci-001, category: supply_chain_integrity, rationale: "All third-party actions pinned to full commit SHA"}
+      - {control_id: sbom-001, category: sbom, rationale: "anchore/sbom-action generates spdx-json SBOM"}
+      - {control_id: as-001, category: artifact_signing, rationale: "cosign signs image with keyless OIDC"}
+      - {control_id: as-002, category: artifact_signing, rationale: "slsa-github-generator produces SLSA level 3 provenance"}
+      - {control_id: ag-001, category: approval_gates, rationale: "production environment with required-reviewers gate"}
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — insecure (gaps: sh-001, lp-001, sci-001)
+  # ---------------------------------------------------------------------------
+  - path: "github_actions/github_actions_node_service_insecure.yml"
+    format: github_actions
+    line_count: 50
+    not_assessable: []
+    negative_expectations: []
+    seeded_gaps:
+      - control_id: sh-001
+        category: secrets_hygiene
+        severity: critical
+        expected_status: missing
+        expected_anchor_line: 35
+        rationale: "Synthetic GitHub PAT placeholder committed to workflow file in docker login --password argument"
+      - control_id: lp-001
+        category: least_privilege
+        severity: high
+        expected_status: missing
+        expected_anchor_line: 7
+        rationale: "permissions block absent; workflow inherits default write-all on all scopes"
+      - control_id: sci-001
+        category: supply_chain_integrity
+        severity: high
+        expected_status: missing
+        expected_anchor_line: 21
+        rationale: "actions/checkout@v4 pinned by mutable tag, not a full commit SHA"
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — partial (gaps: sh-002, as-001, as-002, sbom-001, ds-002, ag-001)
+  # ---------------------------------------------------------------------------
+  - path: "github_actions/github_actions_node_service_partial.yml"
+    format: github_actions
+    line_count: 53
+    not_assessable: []
+    negative_expectations:
+      - {control_id: lp-001, category: least_privilege, rationale: "permissions: contents=read, packages=read only"}
+      - {control_id: sci-001, category: supply_chain_integrity, rationale: "All actions pinned to full commit SHAs"}
+      - {control_id: sa-001, category: static_analysis, rationale: "semgrep-action with owasp-top-ten present"}
+      - {control_id: ds-001, category: dependency_scanning, rationale: "npm audit --audit-level=high present"}
+    seeded_gaps:
+      - control_id: sh-002
+        category: secrets_hygiene
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No gitleaks or equivalent secret-scanning step present in pipeline"
+      - control_id: as-001
+        category: artifact_signing
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No cosign or equivalent image-signing step present"
+      - control_id: sbom-001
+        category: sbom
+        severity: medium
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No syft or equivalent SBOM generation step present"
+      - control_id: ag-001
+        category: approval_gates
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No environment with required-reviewers gate before production deploy"
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — Python insecure (gaps: sa-001, ds-001, ag-001, sci-002)
+  # ---------------------------------------------------------------------------
+  - path: "github_actions/github_actions_python_service_insecure.yml"
+    format: github_actions
+    line_count: 51
+    not_assessable: []
+    negative_expectations:
+      - {control_id: lp-001, category: least_privilege, rationale: "permissions: contents=read, pull-requests=write scoped minimally"}
+      - {control_id: sci-001, category: supply_chain_integrity, rationale: "actions/checkout pinned to full SHA"}
+    seeded_gaps:
+      - control_id: sci-002
+        category: supply_chain_integrity
+        severity: medium
+        expected_status: missing
+        expected_anchor_line: 12
+        rationale: "pull_request_target trigger combined with checkout of PR head SHA allows pwn-request from fork"
+      - control_id: sa-001
+        category: static_analysis
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No semgrep, bandit, or equivalent SAST step in CI pipeline"
+      - control_id: ds-001
+        category: dependency_scanning
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No pip-audit or equivalent SCA dependency scan present"
+      - control_id: ag-001
+        category: approval_gates
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "deploy job runs automatically without an environment requiring reviewers"
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — Python partial (gaps: iac-001, as-001, sbom-001, ds-002)
+  # ---------------------------------------------------------------------------
+  - path: "github_actions/github_actions_python_service_partial.yml"
+    format: github_actions
+    line_count: 64
+    not_assessable: []
+    negative_expectations:
+      - {control_id: lp-001, category: least_privilege, rationale: "permissions: contents=read, id-token=write scoped minimally"}
+      - {control_id: lp-002, category: least_privilege, rationale: "No wildcard write grants; minimal permission set"}
+      - {control_id: sh-002, category: secrets_hygiene, rationale: "gitleaks-action present with exit-code enforcement"}
+      - {control_id: sa-001, category: static_analysis, rationale: "bandit SAST step present covering src/ directory"}
+      - {control_id: ds-001, category: dependency_scanning, rationale: "pip-audit dependency scan step present"}
+      - {control_id: sci-001, category: supply_chain_integrity, rationale: "All actions pinned to full commit SHAs"}
+      - {control_id: ag-001, category: approval_gates, rationale: "production environment with required-reviewers gate"}
+    seeded_gaps:
+      - control_id: iac-001
+        category: iac_misconfiguration
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No checkov or tfsec IaC scan step present for infra/ directory"
+      - control_id: as-001
+        category: artifact_signing
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No cosign or equivalent artifact signing step"
+      - control_id: sbom-001
+        category: sbom
+        severity: medium
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No syft or equivalent SBOM generation step"
+      - control_id: ds-002
+        category: dependency_scanning
+        severity: medium
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No trivy or equivalent container image scan step"
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — NOT ASSESSABLE (unresolvable composite action)
+  # ---------------------------------------------------------------------------
+  - path: "github_actions/github_actions_composite_unresolvable.yml"
+    format: github_actions
+    line_count: 32
+    seeded_gaps: []
+    negative_expectations: []
+    not_assessable:
+      - construct: "uses: my-synthetic-org/nonexistent-composite-action@abc1234def5678ab"
+        first_line: 24
+        rationale: "Composite action reference cannot be resolved; enclosed control steps are not statically analyzable"
+
+  # ---------------------------------------------------------------------------
+  # GitLab CI — hardened (all 9 control categories present)
+  # ---------------------------------------------------------------------------
+  - path: "gitlab_ci/gitlab_ci_node_service_hardened.yml"
+    format: gitlab_ci
+    line_count: 99
+    seeded_gaps: []
+    not_assessable: []
+    negative_expectations:
+      - {control_id: sh-002, category: secrets_hygiene, rationale: "gitleaks detect stage present with exit-code 1"}
+      - {control_id: sa-001, category: static_analysis, rationale: "semgrep SAST stage present with error flag"}
+      - {control_id: ds-001, category: dependency_scanning, rationale: "npm audit with audit-level=high in dependency-scan stage"}
+      - {control_id: ds-002, category: dependency_scanning, rationale: "trivy image scan with CRITICAL,HIGH exit-code 1"}
+      - {control_id: iac-001, category: iac_misconfiguration, rationale: "checkov IaC scan on infra/ directory present"}
+      - {control_id: sbom-001, category: sbom, rationale: "syft generates spdx-json SBOM in sign-publish stage"}
+      - {control_id: as-001, category: artifact_signing, rationale: "cosign signs image with keyless OIDC"}
+      - {control_id: as-002, category: artifact_signing, rationale: "cosign attest uploads SBOM as provenance attestation"}
+      - {control_id: ag-001, category: approval_gates, rationale: "sign-publish stage uses protected environment with when: manual"}
+
+  # ---------------------------------------------------------------------------
+  # GitLab CI — insecure (gaps: sh-001, sh-002, sa-001)
+  # ---------------------------------------------------------------------------
+  - path: "gitlab_ci/gitlab_ci_node_service_insecure.yml"
+    format: gitlab_ci
+    line_count: 47
+    not_assessable: []
+    negative_expectations: []
+    seeded_gaps:
+      - control_id: sh-001
+        category: secrets_hygiene
+        severity: critical
+        expected_status: missing
+        expected_anchor_line: 15
+        rationale: "Synthetic GitHub PAT placeholder committed as NPM_AUTH_TOKEN variable value"
+      - control_id: sh-002
+        category: secrets_hygiene
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No gitleaks or detect-secrets stage in pipeline"
+      - control_id: sa-001
+        category: static_analysis
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No semgrep or eslint-security SAST stage in pipeline"
+
+  # ---------------------------------------------------------------------------
+  # GitLab CI — partial (gaps: ds-001, ds-002, iac-001, as-001, sbom-001, ag-001)
+  # ---------------------------------------------------------------------------
+  - path: "gitlab_ci/gitlab_ci_node_service_partial.yml"
+    format: gitlab_ci
+    line_count: 61
+    not_assessable: []
+    negative_expectations:
+      - {control_id: sh-002, category: secrets_hygiene, rationale: "gitleaks detect stage present"}
+      - {control_id: sa-001, category: static_analysis, rationale: "semgrep SAST stage present"}
+    seeded_gaps:
+      - control_id: ds-001
+        category: dependency_scanning
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No npm audit or SCA stage in pipeline"
+      - control_id: ds-002
+        category: dependency_scanning
+        severity: medium
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No trivy container scan stage present"
+      - control_id: iac-001
+        category: iac_misconfiguration
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No checkov or tfsec IaC scan stage present"
+      - control_id: as-001
+        category: artifact_signing
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No cosign signing step present after image build"
+      - control_id: sbom-001
+        category: sbom
+        severity: medium
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No syft SBOM generation step present"
+      - control_id: ag-001
+        category: approval_gates
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No protected environment or manual gate before deploy"
+
+  # ---------------------------------------------------------------------------
+  # GitLab CI — Python insecure (gaps: as-001, sbom-001, ag-001, lp-001, ds-002)
+  # ---------------------------------------------------------------------------
+  - path: "gitlab_ci/gitlab_ci_python_service_insecure.yml"
+    format: gitlab_ci
+    line_count: 47
+    not_assessable: []
+    negative_expectations: []
+    seeded_gaps:
+      - control_id: lp-001
+        category: least_privilege
+        severity: high
+        expected_status: missing
+        expected_anchor_line: 9
+        rationale: "CI_JOB_TOKEN used for registry without scope restriction; DOCKER_DRIVER set globally"
+      - control_id: ds-002
+        category: dependency_scanning
+        severity: medium
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No trivy or equivalent container image scan after build"
+      - control_id: as-001
+        category: artifact_signing
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No cosign image signing step present"
+      - control_id: sbom-001
+        category: sbom
+        severity: medium
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No syft SBOM generation step present"
+      - control_id: ag-001
+        category: approval_gates
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "deploy stage runs automatically with no protected environment or manual gate"
+
+  # ---------------------------------------------------------------------------
+  # GitLab CI — NOT ASSESSABLE (unresolvable include:remote)
+  # ---------------------------------------------------------------------------
+  - path: "gitlab_ci/gitlab_ci_include_remote.yml"
+    format: gitlab_ci
+    line_count: 38
+    seeded_gaps: []
+    negative_expectations: []
+    not_assessable:
+      - construct: "include:remote: https://config.synthetic.example.invalid/shared-security-config.yml"
+        first_line: 10
+        rationale: "Remote include URL is unreachable; included configuration cannot be analyzed statically"
+
+  # ---------------------------------------------------------------------------
+  # Jenkins — hardened (all 9 control categories present)
+  # ---------------------------------------------------------------------------
+  - path: "jenkins/jenkins_java_service_hardened.jenkinsfile"
+    format: jenkins
+    line_count: 117
+    seeded_gaps: []
+    not_assessable: []
+    negative_expectations:
+      - {control_id: sh-002, category: secrets_hygiene, rationale: "gitleaks detect stage present with exit-code 1"}
+      - {control_id: sa-001, category: static_analysis, rationale: "semgrep SAST stage with java config present"}
+      - {control_id: ds-001, category: dependency_scanning, rationale: "OWASP dependency-check maven plugin present with CVSS threshold 7"}
+      - {control_id: ds-002, category: dependency_scanning, rationale: "trivy image scan with CRITICAL,HIGH exit-code 1"}
+      - {control_id: iac-001, category: iac_misconfiguration, rationale: "checkov IaC scan on infra/ with terraform framework"}
+      - {control_id: sbom-001, category: sbom, rationale: "syft generates spdx-json SBOM archived as artifact"}
+      - {control_id: as-001, category: artifact_signing, rationale: "cosign sign with keyless OIDC present"}
+      - {control_id: ag-001, category: approval_gates, rationale: "input step requires manual approval before production deploy"}
+      - {control_id: lp-001, category: least_privilege, rationale: "credentials scoped to withCredentials blocks, not global env"}
+      - {control_id: sci-001, category: supply_chain_integrity, rationale: "Docker image pinned by digest (sha256:SYNTHETIC_DIGEST_PLACEHOLDER)"}
+
+  # ---------------------------------------------------------------------------
+  # Jenkins — insecure (gaps: sh-001, lp-001, sci-001)
+  # ---------------------------------------------------------------------------
+  - path: "jenkins/jenkins_java_service_insecure.jenkinsfile"
+    format: jenkins
+    line_count: 51
+    not_assessable: []
+    negative_expectations: []
+    seeded_gaps:
+      - control_id: sh-001
+        category: secrets_hygiene
+        severity: critical
+        expected_status: missing
+        expected_anchor_line: 18
+        rationale: "Synthetic GitHub PAT placeholder committed as REGISTRY_PASS in global environment block"
+      - control_id: lp-001
+        category: least_privilege
+        severity: high
+        expected_status: missing
+        expected_anchor_line: 15
+        rationale: "Registry password in global environment block exposes credential to all stages"
+      - control_id: sci-001
+        category: supply_chain_integrity
+        severity: high
+        expected_status: missing
+        expected_anchor_line: 10
+        rationale: "Docker agent image pinned by mutable tag eclipse-temurin:21-jdk without digest"
+
+  # ---------------------------------------------------------------------------
+  # Jenkins — partial (gaps: as-001, iac-001, sbom-001, ds-002)
+  # ---------------------------------------------------------------------------
+  - path: "jenkins/jenkins_java_service_partial.jenkinsfile"
+    format: jenkins
+    line_count: 81
+    not_assessable: []
+    negative_expectations:
+      - {control_id: sh-002, category: secrets_hygiene, rationale: "gitleaks detect stage present"}
+      - {control_id: sa-001, category: static_analysis, rationale: "semgrep SAST stage present"}
+      - {control_id: ds-001, category: dependency_scanning, rationale: "OWASP dependency-check present"}
+      - {control_id: sci-001, category: supply_chain_integrity, rationale: "Docker image pinned by digest"}
+      - {control_id: lp-001, category: least_privilege, rationale: "credentials scoped to withCredentials block"}
+      - {control_id: ag-001, category: approval_gates, rationale: "input step requires manual approval"}
+    seeded_gaps:
+      - control_id: ds-002
+        category: dependency_scanning
+        severity: medium
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No trivy or equivalent container image scan stage present"
+      - control_id: iac-001
+        category: iac_misconfiguration
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No checkov IaC scan stage present"
+      - control_id: as-001
+        category: artifact_signing
+        severity: high
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No cosign image signing stage present"
+      - control_id: sbom-001
+        category: sbom
+        severity: medium
+        expected_status: missing
+        expected_anchor_line: null
+        rationale: "No syft SBOM generation stage present"
+
+  # ---------------------------------------------------------------------------
+  # Jenkins — NOT ASSESSABLE (scripted block)
+  # ---------------------------------------------------------------------------
+  - path: "jenkins/jenkins_scripted_block.jenkinsfile"
+    format: jenkins
+    line_count: 43
+    seeded_gaps: []
+    negative_expectations: []
+    not_assessable:
+      - construct: "script { ... } island in Dynamic Config stage"
+        first_line: 25
+        rationale: "script{} Groovy island contains dynamic iteration and conditional control invocation that cannot be statically analyzed"

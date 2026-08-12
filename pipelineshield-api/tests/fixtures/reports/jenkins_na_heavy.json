@@ -1,0 +1,30 @@
+{
+  "description": "Jenkins declarative pipeline with heavy NOT_ASSESSABLE coverage due to scripted Groovy blocks.",
+  "analysis": {
+    "pipeline_format": "jenkins",
+    "format_confidence": 0.91,
+    "score": null,
+    "grade": null,
+    "unscorable_reason": "all_not_assessable"
+  },
+  "category_scores": [
+    {"category_id": "secrets_hygiene", "earned": 0.0, "possible": 0.0, "excluded_count": 3},
+    {"category_id": "permissions_least_privilege", "earned": 0.0, "possible": 0.0, "excluded_count": 2},
+    {"category_id": "supply_chain", "earned": 0.0, "possible": 0.0, "excluded_count": 2},
+    {"category_id": "artifact_integrity", "earned": 0.0, "possible": 0.0, "excluded_count": 2},
+    {"category_id": "pipeline_isolation", "earned": 0.0, "possible": 0.0, "excluded_count": 2},
+    {"category_id": "code_review", "earned": 0.0, "possible": 0.0, "excluded_count": 1},
+    {"category_id": "infrastructure_hardening", "earned": 0.0, "possible": 0.0, "excluded_count": 2},
+    {"category_id": "runtime_controls", "earned": 0.0, "possible": 0.0, "excluded_count": 2},
+    {"category_id": "compliance_posture", "earned": 0.0, "possible": 0.0, "excluded_count": 2}
+  ],
+  "findings": [],
+  "coverage_limitations": [
+    {
+      "kind": "scripted_groovy",
+      "location": "Jenkinsfile:stage('Build'):steps:script (lines 12-45)",
+      "reason": "Scripted Groovy block cannot be statically analysed; dynamic method invocations mask control evidence.",
+      "affected_control_ids": ["sh-001", "sh-002", "sh-003", "pl-001", "pl-002", "sc-001", "sc-002", "ai-001", "ai-002", "pi-001", "pi-002", "cr-001", "ih-001", "ih-002", "rc-001", "rc-002", "cp-001", "cp-002"]
+    }
+  ]
+}

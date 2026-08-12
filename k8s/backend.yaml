@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pipelineshield-backend
+  namespace: pipelineshield
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pipelineshield-backend
+  template:
+    metadata:
+      labels:
+        app: pipelineshield-backend
+    spec:
+      containers:
+        - name: backend
+          image: pipelineshield-backend:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DISABLE_AUTH
+              value: "true"
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://pipelineshield:pipelineshield@pipelineshield-postgres:5432/pipelineshield"
+            - name: REDIS_URL
+              value: "redis://pipelineshield-redis:6379/0"
+            # Dev-only passphrase for EnvKeyProvider (AES-256-GCM envelope
+            # encryption of masked content). Never reuse this value outside
+            # this ephemeral CI/demo cluster.
+            - name: PIPELINE_SHIELD_DEF_KEY
+              value: "ci-demo-passphrase-not-for-production-use"
+            - name: SEED_DEMO_DATA
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /api/docs
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/docs
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pipelineshield-backend
+  namespace: pipelineshield
+spec:
+  selector:
+    app: pipelineshield-backend
+  ports:
+    - port: 8000
+      targetPort: 8000

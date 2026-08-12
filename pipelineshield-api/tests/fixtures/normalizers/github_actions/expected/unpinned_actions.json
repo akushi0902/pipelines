@@ -1,0 +1,131 @@
+{
+  "ir_version": "1.0",
+  "source_format": "github_actions",
+  "triggers": [
+    "push"
+  ],
+  "trigger_details": {
+    "push": {}
+  },
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "deploy",
+      "name": null,
+      "runs_on": "ubuntu-latest",
+      "steps": [
+        {
+          "id": null,
+          "name": null,
+          "uses": "actions/checkout@v4",
+          "run": null,
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": {
+            "name": "actions/checkout",
+            "version_ref": "v4",
+            "pin_form": "tag",
+            "anchor": null
+          },
+          "secret_refs": []
+        },
+        {
+          "id": null,
+          "name": null,
+          "uses": "actions/setup-node@main",
+          "run": null,
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": {
+            "name": "actions/setup-node",
+            "version_ref": "main",
+            "pin_form": "branch",
+            "anchor": null
+          },
+          "secret_refs": []
+        },
+        {
+          "id": null,
+          "name": "Deploy",
+          "uses": "some-org/deploy-action@v2.1.0",
+          "run": null,
+          "env": {
+            "API_KEY": "${{ secrets.DEPLOY_API_KEY }}",
+            "ENV_TOKEN": "${{ env.CI_TOKEN }}"
+          },
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": {
+            "name": "some-org/deploy-action",
+            "version_ref": "v2.1.0",
+            "pin_form": "tag",
+            "anchor": null
+          },
+          "secret_refs": [
+            {
+              "name": "DEPLOY_API_KEY",
+              "source": "secrets",
+              "expression": "secrets.DEPLOY_API_KEY",
+              "anchor": null
+            },
+            {
+              "name": "CI_TOKEN",
+              "source": "env",
+              "expression": "env.CI_TOKEN",
+              "anchor": null
+            }
+          ]
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": [
+      "triggers",
+      "workflow_permissions",
+      "jobs",
+      "job_permissions",
+      "steps",
+      "action_refs",
+      "secret_refs",
+      "matrix_static",
+      "needs"
+    ],
+    "constructs_excluded": [
+      "concurrency",
+      "environment",
+      "outputs",
+      "defaults",
+      "services",
+      "container"
+    ],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": {
+    "start_line": 2,
+    "start_column": 1,
+    "end_line": null
+  }
+}

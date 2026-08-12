@@ -1,0 +1,61 @@
+# Synthetic partial variant: Node.js service
+# Present: sh-002, sa-001, lp-001, sci-001 (image tags pinned), sh-001
+# Gaps: ds-001 (no SCA audit), ds-002 (no container scan), iac-001 (no IaC scan),
+#       as-001 (no signing), sbom-001 (no SBOM), ag-001 (no manual gate)
+
+stages:
+  - secret-scan
+  - sast
+  - test
+  - build
+
+variables:
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+  DOCKER_TLS_CERTDIR: "/certs"
+
+default:
+  image: node:22-alpine
+
+# PRESENT sh-002: secret scanner
+secret-scan:
+  stage: secret-scan
+  image: zricethezav/gitleaks:v8.25.1
+  script:
+    - gitleaks detect --source . --exit-code 1
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# PRESENT sa-001: SAST
+semgrep-sast:
+  stage: sast
+  image: semgrep/semgrep:1.124.0
+  script:
+    - semgrep --config p/owasp-top-ten --error
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+test:
+  stage: test
+  script:
+    - npm ci
+    - npm test
+
+build-image:
+  stage: build
+  image: docker:27.5.1
+  services:
+    - docker:27.5.1-dind
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t "$IMAGE_NAME" .
+    - docker push "$IMAGE_NAME"
+  only:
+    - main
+
+# GAP ds-001: no npm audit or equivalent SCA step
+# GAP ds-002: no trivy container scan stage
+# GAP iac-001: no checkov IaC stage
+# GAP as-001: no cosign signing step
+# GAP sbom-001: no syft SBOM generation
+# GAP ag-001: deploy runs automatically, no manual approval environment

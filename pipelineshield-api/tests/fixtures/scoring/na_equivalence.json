@@ -1,0 +1,23 @@
+{
+  "description": "NOT_ASSESSABLE equivalence fixture: 3 NA controls should not change score vs absent",
+  "note": "sh-001 and sh-002 NA, rest present — score equals same run without those controls",
+  "verdicts": [
+    {"control_id": "sh-001", "category_id": "secrets_hygiene", "verdict": "not_assessable"},
+    {"control_id": "sh-002", "category_id": "secrets_hygiene", "verdict": "not_assessable"},
+    {"control_id": "as-001", "category_id": "artifact_signing", "verdict": "present"},
+    {"control_id": "as-002", "category_id": "artifact_signing", "verdict": "present"},
+    {"control_id": "sa-001", "category_id": "static_analysis", "verdict": "present"},
+    {"control_id": "ds-001", "category_id": "dependency_scanning", "verdict": "present"},
+    {"control_id": "ds-002", "category_id": "dependency_scanning", "verdict": "present"},
+    {"control_id": "lp-001", "category_id": "least_privilege", "verdict": "present"},
+    {"control_id": "lp-002", "category_id": "least_privilege", "verdict": "present"},
+    {"control_id": "iac-001", "category_id": "iac_misconfiguration", "verdict": "present"},
+    {"control_id": "sci-001", "category_id": "supply_chain_integrity", "verdict": "present"},
+    {"control_id": "sci-002", "category_id": "supply_chain_integrity", "verdict": "present"},
+    {"control_id": "sbom-001", "category_id": "sbom", "verdict": "present"},
+    {"control_id": "ag-001", "category_id": "approval_gates", "verdict": "present"}
+  ],
+  "expected_score": "100.0",
+  "expected_grade": "A",
+  "note_na": "secrets_hygiene category has 0 possible (both NA), excluded from denominator"
+}

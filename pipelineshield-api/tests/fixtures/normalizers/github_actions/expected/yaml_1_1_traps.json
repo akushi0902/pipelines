@@ -1,0 +1,97 @@
+{
+  "ir_version": "1.0",
+  "source_format": "github_actions",
+  "triggers": [
+    "push"
+  ],
+  "trigger_details": {
+    "push": {
+      "branches": [
+        "main"
+      ]
+    }
+  },
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "check",
+      "name": null,
+      "runs_on": "ubuntu-latest",
+      "steps": [
+        {
+          "id": null,
+          "name": "Checkout",
+          "uses": "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "run": null,
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": {
+            "name": "actions/checkout",
+            "version_ref": "11bd71901bbe5b1630ceea73d27597364c9af683",
+            "pin_form": "sha",
+            "anchor": null
+          },
+          "secret_refs": []
+        },
+        {
+          "id": null,
+          "name": "Echo flags",
+          "uses": null,
+          "run": "echo \"Flag: $FEATURE_FLAG\"\necho \"Enabled: $ENABLED\"\n",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": [
+      "triggers",
+      "workflow_permissions",
+      "jobs",
+      "job_permissions",
+      "steps",
+      "action_refs",
+      "secret_refs",
+      "matrix_static",
+      "needs"
+    ],
+    "constructs_excluded": [
+      "concurrency",
+      "environment",
+      "outputs",
+      "defaults",
+      "services",
+      "container"
+    ],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": {
+    "start_line": 5,
+    "start_column": 1,
+    "end_line": null
+  }
+}

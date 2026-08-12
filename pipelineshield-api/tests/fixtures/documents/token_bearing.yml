@@ -1,0 +1,15 @@
+# Token-bearing fixture — SYNTHETIC PLACEHOLDER only, not a real credential.
+# Used to test that AnchorValidator snippet re-scan masks secret-shaped content.
+name: token-bearing-ci
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hardcoded token step
+        env:
+          # SYNTHETIC PLACEHOLDER — not a real token
+          API_TOKEN: ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        run: echo "token present"

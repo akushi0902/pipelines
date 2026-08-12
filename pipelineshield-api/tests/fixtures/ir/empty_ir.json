@@ -1,0 +1,20 @@
+{
+  "ir_version": "1.0",
+  "source_format": "github_actions",
+  "triggers": [],
+  "trigger_details": {},
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": [],
+    "constructs_excluded": [],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": null
+}

@@ -1,0 +1,13 @@
+# Mutated-line fixture — used to test fingerprint_mismatch suppression.
+# The validator is given a fingerprint computed from the original line,
+# but this document has a deliberately different value on that line.
+name: mutated-line-ci
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: mutated step
+        run: echo "this line was changed after the finding was generated"

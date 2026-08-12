@@ -1,0 +1,87 @@
+{
+  "_comment": "Committed audit fixture corpus covering each known action type. Used by the content-safety assertion (AC-11 of WO-011). All change_detail entries contain metadata only — no secret values, no pipeline definition content.",
+  "corpus": [
+    {
+      "action": "catalogue.version_created",
+      "resource_type": "catalogue",
+      "change_detail": {
+        "version": 2,
+        "diff_count": 3,
+        "changed_controls": ["sh-001", "as-001"]
+      }
+    },
+    {
+      "action": "analysis.ingestion_accepted",
+      "resource_type": "analysis",
+      "change_detail": {
+        "detected_format": "github_actions",
+        "format_confidence": 0.92,
+        "filename": "ci.yml",
+        "line_count": 45
+      }
+    },
+    {
+      "action": "auth.login_success",
+      "resource_type": "auth",
+      "change_detail": {
+        "idp_subject_prefix": "auth0|abcd1234",
+        "persona": "devops_engineer",
+        "jit_created": false
+      }
+    },
+    {
+      "action": "auth.login_failure",
+      "resource_type": "auth",
+      "change_detail": {
+        "reason": "state_mismatch",
+        "attempt_number": 1
+      }
+    },
+    {
+      "action": "auth.logout",
+      "resource_type": "auth",
+      "change_detail": {
+        "reason": "user_initiated",
+        "session_age_seconds": 3600
+      }
+    },
+    {
+      "action": "auth.session_idle_expired",
+      "resource_type": "auth",
+      "change_detail": {
+        "idle_seconds": 1800,
+        "persona": "app_developer"
+      }
+    },
+    {
+      "action": "authz.denied",
+      "resource_type": "authz",
+      "change_detail": {
+        "required_capability": "catalogue:write",
+        "persona": "app_developer",
+        "path": "/api/v1/catalogue"
+      }
+    }
+  ],
+  "content_safety_negative_cases": [
+    {
+      "_comment": "These entries MUST be rejected by the content guard. Used by test_audit_content_safety.",
+      "name": "pat_in_change_detail",
+      "change_detail": {
+        "token": "ghp_EXAMPLEsyntheticNOTREALaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "aws_key_in_change_detail",
+      "change_detail": {
+        "aws_key": "AKIAIOSFODNN7EXAMPLE"
+      }
+    },
+    {
+      "name": "definition_content_excerpt",
+      "change_detail": {
+        "excerpt": "steps:\n  - uses: actions/checkout@v4\n  - run: echo hello"
+      }
+    }
+  ]
+}

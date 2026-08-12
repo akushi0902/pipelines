@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pipelineshield-redis
+  namespace: pipelineshield
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pipelineshield-redis
+  template:
+    metadata:
+      labels:
+        app: pipelineshield-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pipelineshield-redis
+  namespace: pipelineshield
+spec:
+  selector:
+    app: pipelineshield-redis
+  ports:
+    - port: 6379
+      targetPort: 6379

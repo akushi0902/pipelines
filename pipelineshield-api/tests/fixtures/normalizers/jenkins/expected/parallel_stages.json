@@ -1,0 +1,221 @@
+{
+  "ir_version": "1.0",
+  "source_format": "jenkins",
+  "triggers": [
+    "cron",
+    "pollSCM"
+  ],
+  "trigger_details": {
+    "cron": {},
+    "pollSCM": {}
+  },
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "Parallel Tests",
+      "name": "Parallel Tests",
+      "runs_on": "any",
+      "steps": [
+        {
+          "id": null,
+          "name": "sh",
+          "uses": null,
+          "run": "pytest tests/unit/",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {
+        "extraction_method": "heuristic",
+        "confidence": 0.7
+      }
+    },
+    {
+      "id": "Unit Tests",
+      "name": "Unit Tests",
+      "runs_on": "any",
+      "steps": [
+        {
+          "id": null,
+          "name": "sh",
+          "uses": null,
+          "run": "pytest tests/unit/",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {
+        "extraction_method": "heuristic",
+        "confidence": 0.7
+      }
+    },
+    {
+      "id": "Integration Tests",
+      "name": "Integration Tests",
+      "runs_on": "any",
+      "steps": [
+        {
+          "id": null,
+          "name": "sh",
+          "uses": null,
+          "run": "pytest tests/integration/",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {
+        "extraction_method": "heuristic",
+        "confidence": 0.7
+      }
+    },
+    {
+      "id": "Lint",
+      "name": "Lint",
+      "runs_on": "any",
+      "steps": [
+        {
+          "id": null,
+          "name": "sh",
+          "uses": null,
+          "run": "flake8 src/",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {
+        "extraction_method": "heuristic",
+        "confidence": 0.7
+      }
+    },
+    {
+      "id": "Deploy",
+      "name": "Deploy",
+      "runs_on": "any",
+      "steps": [
+        {
+          "id": null,
+          "name": "sh",
+          "uses": null,
+          "run": "./deploy.sh",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {
+        "extraction_method": "heuristic",
+        "confidence": 0.7
+      }
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": [
+      "pipeline_block",
+      "agent_any_none",
+      "agent_label",
+      "agent_docker_image",
+      "stages_block",
+      "stage_block",
+      "steps_block",
+      "parallel_block",
+      "environment_credentials",
+      "with_credentials",
+      "triggers_block",
+      "options_block",
+      "post_block"
+    ],
+    "constructs_excluded": [
+      "when_block",
+      "input_block",
+      "matrix_block",
+      "agent_kubernetes_yaml",
+      "lock_resource",
+      "retry_block",
+      "timeout_block",
+      "tool_block",
+      "changelog_block",
+      "deploy_artifact"
+    ],
+    "coverage_ratio": 1.0
+  },
+  "trigger_anchor": {
+    "start_line": 2,
+    "start_column": 1,
+    "end_line": 36
+  }
+}

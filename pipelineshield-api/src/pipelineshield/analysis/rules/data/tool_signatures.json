@@ -1,0 +1,147 @@
+{
+  "secrets_hygiene": {
+    "control_id": "sh-002",
+    "action_patterns": [
+      "gitleaks/gitleaks-action",
+      "trufflesecurity/trufflehog",
+      "zricethezav/gitleaks"
+    ],
+    "image_patterns": [
+      "zricethezav/gitleaks",
+      "trufflesecurity/trufflehog"
+    ],
+    "shell_tokens": [
+      "gitleaks detect",
+      "gitleaks protect",
+      "trufflehog filesystem",
+      "trufflehog git",
+      "detect-secrets scan"
+    ]
+  },
+  "static_analysis": {
+    "control_id": "sa-001",
+    "action_patterns": [
+      "returntocorp/semgrep-action",
+      "semgrep/semgrep-github-action",
+      "github/codeql-action/analyze",
+      "github/codeql-action/init"
+    ],
+    "image_patterns": [
+      "semgrep/semgrep",
+      "returntocorp/semgrep"
+    ],
+    "shell_tokens": [
+      "semgrep --",
+      "semgrep -c",
+      "semgrep --config",
+      "codeql database",
+      "bandit -r",
+      "bandit --",
+      "sonar-scanner",
+      "pylint "
+    ]
+  },
+  "dependency_scanning": {
+    "control_id": "ds-001",
+    "action_patterns": [],
+    "image_patterns": [],
+    "shell_tokens": [
+      "npm audit",
+      "pip-audit",
+      "pip audit",
+      "safety check",
+      "safety scan",
+      "snyk test",
+      "owasp:dependency-check",
+      "dependency-check.sh",
+      "dependency-check-maven"
+    ]
+  },
+  "container_scanning": {
+    "control_id": "ds-002",
+    "action_patterns": [
+      "aquasecurity/trivy-action",
+      "anchore/scan-action"
+    ],
+    "image_patterns": [
+      "aquasec/trivy",
+      "anchore/grype"
+    ],
+    "shell_tokens": [
+      "trivy image",
+      "trivy container",
+      "grype ",
+      "snyk container"
+    ]
+  },
+  "iac_misconfiguration": {
+    "control_id": "iac-001",
+    "action_patterns": [
+      "bridgecrewio/checkov-action",
+      "aquasecurity/tfsec-action",
+      "tenable/terrascan-action"
+    ],
+    "image_patterns": [
+      "bridgecrew/checkov",
+      "aquasec/tfsec"
+    ],
+    "shell_tokens": [
+      "checkov -d",
+      "checkov --directory",
+      "checkov ",
+      "tfsec ",
+      "terrascan scan"
+    ]
+  },
+  "sbom": {
+    "control_id": "sbom-001",
+    "action_patterns": [
+      "anchore/sbom-action"
+    ],
+    "image_patterns": [
+      "anchore/syft"
+    ],
+    "shell_tokens": [
+      "syft ",
+      "cyclonedx-bom",
+      "cdxgen ",
+      "cyclonedx-npm",
+      "cyclonedx-python"
+    ]
+  },
+  "artifact_signing": {
+    "control_id": "as-001",
+    "action_patterns": [
+      "sigstore/cosign-installer",
+      "docker/login-action"
+    ],
+    "image_patterns": [
+      "cgr.dev/chainguard/cosign",
+      "gcr.io/projectsigstore/cosign"
+    ],
+    "shell_tokens": [
+      "cosign sign",
+      "notation sign"
+    ]
+  },
+  "provenance_attestation": {
+    "control_id": "as-002",
+    "action_patterns": [
+      "slsa-framework/slsa-github-generator"
+    ],
+    "image_patterns": [],
+    "shell_tokens": [
+      "cosign attest",
+      "slsa-verifier verify"
+    ]
+  },
+  "approval_gates": {
+    "control_id": "ag-001",
+    "action_patterns": [],
+    "image_patterns": [],
+    "shell_tokens": [
+      "input message:",
+      "input("
+    ]
+  }
+}

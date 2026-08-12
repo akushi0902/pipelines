@@ -1,0 +1,8 @@
+# Sample pipeline with plaintext secrets in key-value pairs
+name: release
+env:
+  DB_PASSWORD: sup3r$ecretP@ssw0rd
+  API_SECRET: my-very-secret-api-key-value
+  GITHUB_TOKEN: plain-token-value-here
+steps:
+  - run: echo "deploy"

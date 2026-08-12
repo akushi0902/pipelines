@@ -1,0 +1,7 @@
+# Sample pipeline with AWS credentials
+name: deploy-aws
+env:
+  AWS_ACCESS_KEY_ID: AKIAIOSFODNN7EXAMPLE
+  AWS_REGION: us-east-1
+steps:
+  - run: aws s3 sync ./dist s3://my-bucket/

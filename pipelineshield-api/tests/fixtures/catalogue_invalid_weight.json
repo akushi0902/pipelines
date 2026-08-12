@@ -1,0 +1,165 @@
+{
+  "_comment": "Invalid: enabled category weights sum to 101 (secrets_hygiene changed from 15 to 16)",
+  "categories": [
+    {
+      "id": "secrets_hygiene",
+      "name": "Secrets Hygiene",
+      "weight": 16,
+      "enabled": true,
+      "description": "Detection of hardcoded or leaked secrets.",
+      "controls": [
+        {
+          "id": "sh-001",
+          "category_id": "secrets_hygiene",
+          "severity": "critical",
+          "enabled": true,
+          "reference_tools": ["Gitleaks"],
+          "remediation_template_ref": null
+        }
+      ]
+    },
+    {
+      "id": "artifact_signing",
+      "name": "Artifact Signing",
+      "weight": 15,
+      "enabled": true,
+      "description": "",
+      "controls": [
+        {
+          "id": "as-001",
+          "category_id": "artifact_signing",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": ["Cosign"],
+          "remediation_template_ref": null
+        }
+      ]
+    },
+    {
+      "id": "static_analysis",
+      "name": "Static Analysis",
+      "weight": 12,
+      "enabled": true,
+      "description": "",
+      "controls": [
+        {
+          "id": "sa-001",
+          "category_id": "static_analysis",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": null
+        }
+      ]
+    },
+    {
+      "id": "dependency_scanning",
+      "name": "Dependency Scanning",
+      "weight": 12,
+      "enabled": true,
+      "description": "",
+      "controls": [
+        {
+          "id": "ds-001",
+          "category_id": "dependency_scanning",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": null
+        }
+      ]
+    },
+    {
+      "id": "least_privilege",
+      "name": "Least Privilege",
+      "weight": 12,
+      "enabled": true,
+      "description": "",
+      "controls": [
+        {
+          "id": "lp-001",
+          "category_id": "least_privilege",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": null
+        }
+      ]
+    },
+    {
+      "id": "iac_misconfiguration",
+      "name": "IaC Misconfiguration",
+      "weight": 10,
+      "enabled": true,
+      "description": "",
+      "controls": [
+        {
+          "id": "iac-001",
+          "category_id": "iac_misconfiguration",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": null
+        }
+      ]
+    },
+    {
+      "id": "supply_chain_integrity",
+      "name": "Supply Chain Integrity",
+      "weight": 10,
+      "enabled": true,
+      "description": "",
+      "controls": [
+        {
+          "id": "sci-001",
+          "category_id": "supply_chain_integrity",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": null
+        }
+      ]
+    },
+    {
+      "id": "sbom",
+      "name": "SBOM",
+      "weight": 8,
+      "enabled": true,
+      "description": "",
+      "controls": [
+        {
+          "id": "sbom-001",
+          "category_id": "sbom",
+          "severity": "medium",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": null
+        }
+      ]
+    },
+    {
+      "id": "approval_gates",
+      "name": "Approval Gates",
+      "weight": 6,
+      "enabled": true,
+      "description": "",
+      "controls": [
+        {
+          "id": "ag-001",
+          "category_id": "approval_gates",
+          "severity": "high",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": null
+        }
+      ]
+    }
+  ],
+  "grade_bands": [
+    {"grade": "F", "min_score": 0,  "max_score": 59},
+    {"grade": "D", "min_score": 60, "max_score": 69},
+    {"grade": "C", "min_score": 70, "max_score": 79},
+    {"grade": "B", "min_score": 80, "max_score": 89},
+    {"grade": "A", "min_score": 90, "max_score": 100}
+  ]
+}

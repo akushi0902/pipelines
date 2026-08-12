@@ -1,0 +1,17 @@
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - project: 'infra/ci-templates'
+    file: '/templates/docker-build.yml'
+
+stages:
+  - test
+  - security
+  - build
+
+test:
+  stage: test
+  image: python:3.12
+  script:
+    - pytest --cov
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"

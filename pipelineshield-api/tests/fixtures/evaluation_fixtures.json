@@ -1,0 +1,74 @@
+{
+  "_comment": "Deterministic evaluation-result fixture sets for ScoringEngine tests (WO-013 AC-11).",
+  "fixture_sets": [
+    {
+      "name": "all_present",
+      "description": "All controls present — yields maximum score against v1 catalogue",
+      "evaluations": {
+        "sh-001": "present", "sh-002": "present",
+        "as-001": "present", "as-002": "present",
+        "sa-001": "present",
+        "ds-001": "present", "ds-002": "present",
+        "lp-001": "present", "lp-002": "present",
+        "iac-001": "present",
+        "sci-001": "present", "sci-002": "present",
+        "sbom-001": "present",
+        "ag-001": "present"
+      },
+      "expected_score": 100,
+      "expected_grade": "A"
+    },
+    {
+      "name": "all_missing",
+      "description": "No controls evaluated — yields zero score",
+      "evaluations": {},
+      "expected_score": 0,
+      "expected_grade": "F"
+    },
+    {
+      "name": "mixed_realistic",
+      "description": "Realistic mixed evaluation: some present, some partial, some missing, some not_assessable",
+      "evaluations": {
+        "sh-001": "present",
+        "sh-002": "missing",
+        "as-001": "partial",
+        "as-002": "present",
+        "sa-001": "not_assessable",
+        "ds-001": "present",
+        "ds-002": "partial",
+        "lp-001": "missing",
+        "lp-002": "present",
+        "iac-001": "present",
+        "sci-001": "missing",
+        "sci-002": "not_assessable",
+        "sbom-001": "present",
+        "ag-001": "partial"
+      }
+    },
+    {
+      "name": "all_not_assessable",
+      "description": "All controls not assessable — unscorable result, no ZeroDivisionError",
+      "evaluations": {
+        "sh-001": "not_assessable", "sh-002": "not_assessable",
+        "as-001": "not_assessable", "as-002": "not_assessable",
+        "sa-001": "not_assessable",
+        "ds-001": "not_assessable", "ds-002": "not_assessable",
+        "lp-001": "not_assessable", "lp-002": "not_assessable",
+        "iac-001": "not_assessable",
+        "sci-001": "not_assessable", "sci-002": "not_assessable",
+        "sbom-001": "not_assessable",
+        "ag-001": "not_assessable"
+      },
+      "expected_unscorable": true
+    }
+  ],
+  "catalogue_v2_overrides": {
+    "_comment": "Weight changes from v1 to v2 for historical integrity tests.",
+    "description": "V2 shifts weight heavily towards supply_chain_integrity (doubled from 10 to 20) at cost of secrets_hygiene (15 → 5) and artifact_signing (15 → 5)",
+    "changed_categories": [
+      {"id": "secrets_hygiene", "weight_v1": 15, "weight_v2": 5},
+      {"id": "artifact_signing", "weight_v1": 15, "weight_v2": 5},
+      {"id": "supply_chain_integrity", "weight_v1": 10, "weight_v2": 30}
+    ]
+  }
+}

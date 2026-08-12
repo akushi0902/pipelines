@@ -1,0 +1,21 @@
+{
+  "description": "All controls NOT_ASSESSABLE — unscorable (zero denominator)",
+  "verdicts": [
+    {"control_id": "sh-001", "category_id": "secrets_hygiene", "verdict": "not_assessable"},
+    {"control_id": "sh-002", "category_id": "secrets_hygiene", "verdict": "not_assessable"},
+    {"control_id": "as-001", "category_id": "artifact_signing", "verdict": "not_assessable"},
+    {"control_id": "as-002", "category_id": "artifact_signing", "verdict": "not_assessable"},
+    {"control_id": "sa-001", "category_id": "static_analysis", "verdict": "not_assessable"},
+    {"control_id": "ds-001", "category_id": "dependency_scanning", "verdict": "not_assessable"},
+    {"control_id": "ds-002", "category_id": "dependency_scanning", "verdict": "not_assessable"},
+    {"control_id": "lp-001", "category_id": "least_privilege", "verdict": "not_assessable"},
+    {"control_id": "lp-002", "category_id": "least_privilege", "verdict": "not_assessable"},
+    {"control_id": "iac-001", "category_id": "iac_misconfiguration", "verdict": "not_assessable"},
+    {"control_id": "sci-001", "category_id": "supply_chain_integrity", "verdict": "not_assessable"},
+    {"control_id": "sci-002", "category_id": "supply_chain_integrity", "verdict": "not_assessable"},
+    {"control_id": "sbom-001", "category_id": "sbom", "verdict": "not_assessable"},
+    {"control_id": "ag-001", "category_id": "approval_gates", "verdict": "not_assessable"}
+  ],
+  "expected_unscorable": true,
+  "expected_unscorable_reason": "all_not_assessable"
+}

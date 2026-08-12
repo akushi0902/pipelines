@@ -1,0 +1,50 @@
+# Synthetic insecure variant: Node.js service
+# Seeded gaps: sh-001 (hardcoded credential), lp-001 (no permissions block),
+#              sci-001 (unpinned action tags)
+# All credential-like values are SYNTHETIC PLACEHOLDERS — not real secrets.
+
+name: node-service-insecure-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# GAP lp-001: permissions block absent — workflow inherits default write-all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # GAP sci-001: actions pinned by mutable tag, not commit SHA
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # GAP sh-001: hardcoded credential-shaped literal (SYNTHETIC PLACEHOLDER)
+      # EXAMPLE_REGISTRY_TOKEN below is a synthetic placeholder that intentionally
+      # resembles a GitHub PAT to exercise the redactor pattern set.
+      - name: Authenticate to registry
+        run: |
+          echo "Logging in with token"
+          docker login ghcr.io \
+            --username ci-bot \
+            --password ghp_EXAMPLEsyntheticNOTREALaaaaaaaaaaaaaaa
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build Docker image
+        run: docker build -t node-service:${{ github.sha }} .
+
+      - name: Push Docker image
+        run: docker push node-service:${{ github.sha }}

@@ -1,0 +1,117 @@
+// Synthetic hardened baseline: Java service — all nine control categories present.
+// Declarative pipeline. All credentials injected via Jenkins credentials store.
+// No real tokens or secrets committed.
+
+pipeline {
+    agent {
+        docker {
+            // CONTROL sci-001: Docker image pinned by digest, not mutable tag
+            image 'eclipse-temurin:21-jdk@sha256:SYNTHETIC_DIGEST_PLACEHOLDER_0000000000000000000000000000000000000000'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+
+    // CONTROL lp-001 / lp-002: credential scope restricted to individual withCredentials blocks
+    options {
+        disableConcurrentBuilds()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    stages {
+        // CONTROL sh-002: secret scanner (gitleaks)
+        stage('Secret Scan') {
+            steps {
+                sh 'gitleaks detect --source . --exit-code 1'
+            }
+        }
+
+        // CONTROL sa-001: SAST (semgrep)
+        stage('SAST') {
+            steps {
+                sh 'semgrep --config p/java --error .'
+            }
+        }
+
+        // CONTROL ds-001: SCA dependency scan (OWASP Dependency Check)
+        stage('Dependency Scan') {
+            steps {
+                sh './mvnw org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7'
+            }
+        }
+
+        // CONTROL iac-001: IaC scan (checkov)
+        stage('IaC Scan') {
+            steps {
+                sh 'checkov -d infra/ --framework terraform --compact --quiet'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh './mvnw test'
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'registry-credentials',
+                    usernameVariable: 'REGISTRY_USER',
+                    passwordVariable: 'REGISTRY_PASS'
+                )]) {
+                    sh '''
+                        docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS" registry.example.synthetic.internal
+                        docker build -t "registry.example.synthetic.internal/java-service:${GIT_COMMIT}" .
+                        docker push "registry.example.synthetic.internal/java-service:${GIT_COMMIT}"
+                    '''
+                }
+            }
+        }
+
+        // CONTROL ds-002: container image scan (trivy)
+        stage('Container Scan') {
+            steps {
+                sh 'trivy image --exit-code 1 --severity CRITICAL,HIGH "registry.example.synthetic.internal/java-service:${GIT_COMMIT}"'
+            }
+        }
+
+        // CONTROL sbom-001: SBOM generation (syft)
+        stage('SBOM') {
+            steps {
+                sh 'syft "registry.example.synthetic.internal/java-service:${GIT_COMMIT}" -o spdx-json > sbom.spdx.json'
+                archiveArtifacts artifacts: 'sbom.spdx.json'
+            }
+        }
+
+        // CONTROL as-001: artifact signing (cosign keyless)
+        stage('Sign') {
+            steps {
+                sh 'cosign sign --yes "registry.example.synthetic.internal/java-service:${GIT_COMMIT}"'
+            }
+        }
+
+        // CONTROL ag-001: manual approval gate before production deploy
+        stage('Approve Deploy') {
+            steps {
+                input message: 'Deploy to production?', ok: 'Approve'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh './scripts/deploy.sh production "${GIT_COMMIT}"'
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

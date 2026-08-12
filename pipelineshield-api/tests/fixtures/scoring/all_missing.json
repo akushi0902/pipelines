@@ -1,0 +1,21 @@
+{
+  "description": "All enabled controls MISSING — expected score 0.0, grade F",
+  "verdicts": [
+    {"control_id": "sh-001", "category_id": "secrets_hygiene", "verdict": "missing"},
+    {"control_id": "sh-002", "category_id": "secrets_hygiene", "verdict": "missing"},
+    {"control_id": "as-001", "category_id": "artifact_signing", "verdict": "missing"},
+    {"control_id": "as-002", "category_id": "artifact_signing", "verdict": "missing"},
+    {"control_id": "sa-001", "category_id": "static_analysis", "verdict": "missing"},
+    {"control_id": "ds-001", "category_id": "dependency_scanning", "verdict": "missing"},
+    {"control_id": "ds-002", "category_id": "dependency_scanning", "verdict": "missing"},
+    {"control_id": "lp-001", "category_id": "least_privilege", "verdict": "missing"},
+    {"control_id": "lp-002", "category_id": "least_privilege", "verdict": "missing"},
+    {"control_id": "iac-001", "category_id": "iac_misconfiguration", "verdict": "missing"},
+    {"control_id": "sci-001", "category_id": "supply_chain_integrity", "verdict": "missing"},
+    {"control_id": "sci-002", "category_id": "supply_chain_integrity", "verdict": "missing"},
+    {"control_id": "sbom-001", "category_id": "sbom", "verdict": "missing"},
+    {"control_id": "ag-001", "category_id": "approval_gates", "verdict": "missing"}
+  ],
+  "expected_score": "0.0",
+  "expected_grade": "F"
+}

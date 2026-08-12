@@ -1,0 +1,125 @@
+{
+  "ir_version": "1.0",
+  "source_format": "gitlab_ci",
+  "triggers": [
+    "merge_requests"
+  ],
+  "trigger_details": {
+    "merge_requests": {}
+  },
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "lint",
+      "name": "lint",
+      "runs_on": "node:20",
+      "steps": [
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "npm run lint",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": "only: ['merge_requests', 'main']",
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    },
+    {
+      "id": "test",
+      "name": "test",
+      "runs_on": "node:20",
+      "steps": [
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "npm test",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": "only: ['merge_requests', 'main']",
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [
+      {
+        "kind": "include_project",
+        "locator": "my-org/shared-ci:/templates/lint.yml@main",
+        "reason": "Project include 'my-org/shared-ci:/templates/lint.yml@main' requires a GitLab API call — never fetched; marked Not Assessable."
+      },
+      {
+        "kind": "include_local",
+        "locator": "/ci/base.yml",
+        "reason": "Local include '/ci/base.yml' is only resolvable when the referenced file is co-submitted — marked Not Assessable."
+      }
+    ],
+    "constructs_handled": [
+      "stages",
+      "include_local",
+      "workflow_rules",
+      "job_script",
+      "job_before_script",
+      "job_after_script",
+      "job_image",
+      "job_tags",
+      "job_variables",
+      "job_rules",
+      "job_only_except",
+      "job_extends",
+      "job_reference",
+      "global_default_inheritance",
+      "hidden_job_templates",
+      "job_needs"
+    ],
+    "constructs_excluded": [
+      "include_remote",
+      "include_project",
+      "include_template",
+      "include_component",
+      "trigger",
+      "release",
+      "artifacts",
+      "cache",
+      "parallel_matrix",
+      "environment",
+      "dast_configuration"
+    ],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": null
+}

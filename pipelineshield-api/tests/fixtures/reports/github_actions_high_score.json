@@ -1,0 +1,44 @@
+{
+  "description": "High-scoring GitHub Actions pipeline. All controls assessed; 2 minor findings.",
+  "analysis": {
+    "pipeline_format": "github_actions",
+    "format_confidence": 0.99,
+    "score": 88,
+    "grade": "B",
+    "unscorable_reason": null
+  },
+  "category_scores": [
+    {"category_id": "secrets_hygiene", "earned": 11.11, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "permissions_least_privilege", "earned": 11.11, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "supply_chain", "earned": 11.11, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "artifact_integrity", "earned": 11.11, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "pipeline_isolation", "earned": 11.11, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "code_review", "earned": 11.11, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "infrastructure_hardening", "earned": 0.0, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "runtime_controls", "earned": 11.11, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "compliance_posture", "earned": 0.0, "possible": 11.12, "excluded_count": 0}
+  ],
+  "findings": [
+    {
+      "source": "deterministic",
+      "control_id": "ih-001",
+      "category": "infrastructure_hardening",
+      "severity": "high",
+      "title": "Runner image is not pinned to a digest",
+      "requires_human_review": false,
+      "anchor_line": 14,
+      "snippet": "        runs-on: ubuntu-latest"
+    },
+    {
+      "source": "deterministic",
+      "control_id": "cp-001",
+      "category": "compliance_posture",
+      "severity": "medium",
+      "title": "Branch protection check not enforced in CI",
+      "requires_human_review": false,
+      "anchor_line": 7,
+      "snippet": "  push:\n    branches: [main]"
+    }
+  ],
+  "coverage_limitations": []
+}

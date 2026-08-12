@@ -1,0 +1,7 @@
+name: reusable-caller
+on: push
+
+jobs:
+  call-workflow:
+    uses: my-org/my-repo/.github/workflows/reusable.yml@main
+    secrets: inherit

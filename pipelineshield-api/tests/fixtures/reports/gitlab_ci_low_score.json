@@ -1,0 +1,67 @@
+{
+  "description": "Low-scoring GitLab CI pipeline. Multiple critical and high findings; 2 unresolved includes.",
+  "analysis": {
+    "pipeline_format": "gitlab_ci",
+    "format_confidence": 0.95,
+    "score": 23,
+    "grade": "F",
+    "unscorable_reason": null
+  },
+  "category_scores": [
+    {"category_id": "secrets_hygiene", "earned": 0.0, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "permissions_least_privilege", "earned": 0.0, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "supply_chain", "earned": 11.11, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "artifact_integrity", "earned": 0.0, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "pipeline_isolation", "earned": 0.0, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "code_review", "earned": 11.11, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "infrastructure_hardening", "earned": 0.0, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "runtime_controls", "earned": 0.0, "possible": 11.11, "excluded_count": 0},
+    {"category_id": "compliance_posture", "earned": 0.0, "possible": 11.12, "excluded_count": 0}
+  ],
+  "findings": [
+    {
+      "source": "deterministic",
+      "control_id": "sh-001",
+      "category": "secrets_hygiene",
+      "severity": "critical",
+      "title": "Hardcoded secret value in CI variable",
+      "requires_human_review": false,
+      "anchor_line": 8,
+      "snippet": "  SECRET_KEY: \"hardcoded-secret-1234\""
+    },
+    {
+      "source": "deterministic",
+      "control_id": "pl-001",
+      "category": "permissions_least_privilege",
+      "severity": "high",
+      "title": "Job runs with privileged Docker socket",
+      "requires_human_review": false,
+      "anchor_line": 23,
+      "snippet": "  services:\n    - docker:dind"
+    },
+    {
+      "source": "ai",
+      "control_id": "sh-002",
+      "category": "secrets_hygiene",
+      "severity": "medium",
+      "title": "Possible credential pattern in build argument",
+      "requires_human_review": true,
+      "anchor_line": 31,
+      "snippet": "  BUILD_ARG: $CI_PASS_TOKEN"
+    }
+  ],
+  "coverage_limitations": [
+    {
+      "kind": "unresolved_include",
+      "location": ".gitlab/ci/base.yml",
+      "reason": "Referenced include file is outside repository root and could not be resolved.",
+      "affected_control_ids": ["ai-001", "rc-001"]
+    },
+    {
+      "kind": "unresolved_extends",
+      "location": ".base_job (line 12)",
+      "reason": "extends target '.base_job' is defined in an unresolved include.",
+      "affected_control_ids": ["ih-002"]
+    }
+  ]
+}

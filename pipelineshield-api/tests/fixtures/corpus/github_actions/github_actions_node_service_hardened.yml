@@ -1,0 +1,100 @@
+# Synthetic hardened baseline: Node.js service — all nine control categories present.
+# All credentials injected via GitHub Secrets. No real tokens committed.
+
+name: node-service-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# CONTROL lp-001 / lp-002: narrow permissions, no wildcard write
+permissions:
+  contents: read
+  id-token: write
+  packages: read
+
+jobs:
+  security-checks:
+    runs-on: ubuntu-24.04
+    steps:
+      # CONTROL sci-001: third-party actions pinned to full commit SHA
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      # CONTROL sh-002: secret scanner (gitleaks)
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b3246a1b330e87fa9b0f82 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # CONTROL sa-001: SAST (semgrep)
+      - name: SAST (semgrep)
+        uses: returntocorp/semgrep-action@fcd5ab7459e8d91cb1777481980d1b18b4fc6735 # v1.124
+        with:
+          config: >-
+            p/owasp-top-ten
+            p/nodejs
+
+      # CONTROL ds-001: SCA dependency scan (npm audit)
+      - name: Dependency scan (npm audit)
+        run: npm audit --audit-level=high
+
+      # CONTROL ds-002: Container image scan (trivy)
+      - name: Container image scan (trivy)
+        uses: aquasecurity/trivy-action@dc5f5b0c5c5cd06d7f0d5ac553c8ef6eda21f787 # 0.32.0
+        with:
+          image-ref: "${{ env.IMAGE_REF }}"
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
+
+      # CONTROL iac-001: IaC scan (checkov)
+      - name: IaC scan (checkov)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: infra/
+          framework: terraform
+
+  build-and-publish:
+    needs: security-checks
+    runs-on: ubuntu-24.04
+    environment:
+      name: production
+      # CONTROL ag-001: manual approval gate via required reviewers on environment
+      url: https://example.synthetic.internal/deploy
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Build Docker image
+        run: |
+          docker build -t "${{ env.IMAGE_NAME }}:${{ github.sha }}" .
+
+      # CONTROL sbom-001: SBOM generation (syft)
+      - name: Generate SBOM (syft)
+        uses: anchore/sbom-action@9a2f6e4ee6db9f2e5da2dcbdb02e9e5e68b7b7f8 # v0.20.0
+        with:
+          image: "${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      # CONTROL as-001: Artifact signing (cosign)
+      - name: Sign image with cosign (keyless OIDC)
+        uses: sigstore/cosign-installer@d7d6bc7722e3ddbef0cb4e1f82f9a5c2eeaea4a7 # v3.8.1
+
+      - name: Push and sign image
+        run: |
+          cosign sign --yes "${{ env.IMAGE_NAME }}:${{ github.sha }}"
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+
+      # CONTROL as-002: Provenance attestation (SLSA)
+      - name: Attest SLSA provenance
+        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0

@@ -1,0 +1,25 @@
+stages:
+  - test
+  - deploy
+
+# Level 1: base template
+.base-template:
+  image: ubuntu:22.04
+  before_script:
+    - apt-get update -qq
+
+# Level 2: intermediate template extending base
+.middle-template:
+  extends: .base-template
+  variables:
+    TIMEOUT: "30"
+  before_script:
+    - echo "middle before_script"
+
+# Level 3: concrete job extending middle
+test-deep:
+  extends: .middle-template
+  stage: test
+  script:
+    - echo "running deep test"
+    - ./test.sh

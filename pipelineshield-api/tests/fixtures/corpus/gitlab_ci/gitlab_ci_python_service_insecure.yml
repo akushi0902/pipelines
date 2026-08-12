@@ -1,0 +1,47 @@
+# Synthetic insecure variant: Python service
+# Seeded gaps: as-001 (no signing), sbom-001 (no SBOM), ag-001 (no manual gate),
+#              lp-001 (overbroad variables: DOCKER_DRIVER without restriction),
+#              ds-002 (no container scan)
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+  # GAP lp-001: CI_JOB_TOKEN used for registry with no explicit scope restriction
+  DOCKER_DRIVER: overlay2
+
+default:
+  image: python:3.12-slim
+
+test:
+  stage: test
+  script:
+    - pip install -r requirements.txt
+    - pytest tests/
+
+build-image:
+  stage: build
+  image: docker:27.5.1
+  services:
+    - docker:27.5.1-dind
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t "$IMAGE_NAME" .
+    - docker push "$IMAGE_NAME"
+  only:
+    - main
+
+# GAP ds-002: no trivy image scan after build
+# GAP as-001: no cosign signing of image
+# GAP sbom-001: no syft SBOM generation
+# GAP ag-001: deploy runs automatically without manual gate or protected environment
+
+deploy:
+  stage: deploy
+  script:
+    - ./scripts/deploy.sh production
+  only:
+    - main

@@ -1,0 +1,46 @@
+{
+  "ir_version": "1.0",
+  "source_format": "jenkins",
+  "triggers": [],
+  "trigger_details": {},
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "Build",
+      "name": "Build",
+      "runs_on": null,
+      "steps": [
+        {
+          "id": null,
+          "name": null,
+          "uses": null,
+          "run": "npm ci",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": {"start_line": 7, "start_column": 9, "end_line": null},
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {"scope": "job", "state": "absent", "grants": {}, "anchor": null},
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": {"start_line": 5, "start_column": 5, "end_line": null},
+      "extraction_metadata": {"extraction_method": "heuristic", "confidence": 0.9}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": ["stage", "sh"],
+    "constructs_excluded": [],
+    "coverage_ratio": 1.0
+  },
+  "trigger_anchor": null
+}

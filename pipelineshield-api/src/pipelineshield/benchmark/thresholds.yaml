@@ -1,0 +1,28 @@
+# Benchmark quality-gate thresholds — tighten here without code changes.
+# Defaults match the WO-019 stated objectives.
+
+# Minimum detection rate (0.0–1.0) for seeded gaps across the full corpus.
+overall_detection_min: 0.80
+
+# Per-format minimums (formats not listed inherit overall_detection_min).
+format_detection_min:
+  github_actions: 0.80
+  gitlab_ci: 0.80
+  # jenkins: omitted — scripted bodies lower detection; tracked separately
+
+# Zero fabrications: any unanchored finding fails the gate.
+max_unanchored_findings: 0
+
+# Deterministic-path latency budget (milliseconds).
+# p95 of per-case wall-clock time must not exceed this.
+deterministic_p95_budget_ms: 5000
+
+# Anchor-line match tolerance (lines above/below expected_anchor_line).
+anchor_line_tolerance: 2
+
+# Minimum warm-up iterations before recording latency.
+latency_warmup_iterations: 3
+
+# Maximum allowed false positives (findings with no matching seeded gap).
+# Zero means the gate requires no unmatched findings.
+max_false_positives: 0

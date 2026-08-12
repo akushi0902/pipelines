@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pipelineshield-postgres
+  namespace: pipelineshield
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pipelineshield-postgres
+  template:
+    metadata:
+      labels:
+        app: pipelineshield-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "pipelineshield"
+            - name: POSTGRES_USER
+              value: "pipelineshield"
+            - name: POSTGRES_PASSWORD
+              value: "pipelineshield"
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - pipelineshield
+                - -d
+                - pipelineshield
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - pipelineshield
+                - -d
+                - pipelineshield
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        # Ephemeral on purpose: this cluster only lives for the CI job's
+        # 15-minute demo window, so data does not need to persist across
+        # pod restarts.
+        - name: pgdata
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pipelineshield-postgres
+  namespace: pipelineshield
+spec:
+  selector:
+    app: pipelineshield-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

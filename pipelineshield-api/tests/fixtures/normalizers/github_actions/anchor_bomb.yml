@@ -1,0 +1,114 @@
+# This file is designed to trigger the alias bomb guard.
+# It contains more than MAX_ALIASES (100) alias references.
+name: anchor-bomb
+on: push
+x_base: &base
+  item: value
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      v1: *base
+      v2: *base
+      v3: *base
+      v4: *base
+      v5: *base
+      v6: *base
+      v7: *base
+      v8: *base
+      v9: *base
+      v10: *base
+      v11: *base
+      v12: *base
+      v13: *base
+      v14: *base
+      v15: *base
+      v16: *base
+      v17: *base
+      v18: *base
+      v19: *base
+      v20: *base
+      v21: *base
+      v22: *base
+      v23: *base
+      v24: *base
+      v25: *base
+      v26: *base
+      v27: *base
+      v28: *base
+      v29: *base
+      v30: *base
+      v31: *base
+      v32: *base
+      v33: *base
+      v34: *base
+      v35: *base
+      v36: *base
+      v37: *base
+      v38: *base
+      v39: *base
+      v40: *base
+      v41: *base
+      v42: *base
+      v43: *base
+      v44: *base
+      v45: *base
+      v46: *base
+      v47: *base
+      v48: *base
+      v49: *base
+      v50: *base
+      v51: *base
+      v52: *base
+      v53: *base
+      v54: *base
+      v55: *base
+      v56: *base
+      v57: *base
+      v58: *base
+      v59: *base
+      v60: *base
+      v61: *base
+      v62: *base
+      v63: *base
+      v64: *base
+      v65: *base
+      v66: *base
+      v67: *base
+      v68: *base
+      v69: *base
+      v70: *base
+      v71: *base
+      v72: *base
+      v73: *base
+      v74: *base
+      v75: *base
+      v76: *base
+      v77: *base
+      v78: *base
+      v79: *base
+      v80: *base
+      v81: *base
+      v82: *base
+      v83: *base
+      v84: *base
+      v85: *base
+      v86: *base
+      v87: *base
+      v88: *base
+      v89: *base
+      v90: *base
+      v91: *base
+      v92: *base
+      v93: *base
+      v94: *base
+      v95: *base
+      v96: *base
+      v97: *base
+      v98: *base
+      v99: *base
+      v100: *base
+      v101: *base
+    steps:
+      - uses: actions/checkout@v4

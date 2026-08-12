@@ -1,0 +1,10 @@
+# Sample pipeline with an embedded private key
+name: sign-artifact
+env:
+  SIGNING_KEY: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEAFAKEKEYDATAHEREABCDEFGHIJKLMNOPQRSTUVWXYZ012345
+    ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789AB
+    -----END RSA PRIVATE KEY-----
+steps:
+  - run: echo "sign"

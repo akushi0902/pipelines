@@ -1,0 +1,51 @@
+{
+  "ir_version": "1.0",
+  "source_format": "jenkins",
+  "triggers": [],
+  "trigger_details": {},
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [],
+  "coverage_report": {
+    "unresolved": [
+      {
+        "kind": "scripted_groovy",
+        "locator": "pipeline",
+        "reason": "No 'pipeline {' block found. This file appears to be a scripted Groovy Jenkinsfile or uses an unsupported top-level structure — the entire file is Not Assessable."
+      }
+    ],
+    "constructs_handled": [
+      "pipeline_block",
+      "agent_any_none",
+      "agent_label",
+      "agent_docker_image",
+      "stages_block",
+      "stage_block",
+      "steps_block",
+      "parallel_block",
+      "environment_credentials",
+      "with_credentials",
+      "triggers_block",
+      "options_block",
+      "post_block"
+    ],
+    "constructs_excluded": [
+      "when_block",
+      "input_block",
+      "matrix_block",
+      "agent_kubernetes_yaml",
+      "lock_resource",
+      "retry_block",
+      "timeout_block",
+      "tool_block",
+      "changelog_block",
+      "deploy_artifact"
+    ],
+    "coverage_ratio": 0.0
+  },
+  "trigger_anchor": null
+}

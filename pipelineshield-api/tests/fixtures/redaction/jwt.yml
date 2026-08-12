@@ -1,0 +1,6 @@
+# Sample pipeline passing a JWT as an environment variable
+name: api-test
+env:
+  API_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIiwiZXhwIjoxNzAwMDAwMDAwfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+steps:
+  - run: curl -H "Authorization: Bearer ${API_TOKEN}" https://api.example.com/v1/data

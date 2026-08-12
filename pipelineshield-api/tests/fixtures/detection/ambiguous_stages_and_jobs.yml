@@ -1,0 +1,12 @@
+# Ambiguous: has both `stages:` (GitLab signal) and `jobs:` (GitHub Actions signal)
+# Confidence should be below 0.8 for both formats, requiring user confirmation.
+
+stages:
+  - build
+  - test
+
+jobs:
+  build_job:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "building"

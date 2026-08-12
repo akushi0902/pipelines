@@ -1,0 +1,22 @@
+# GitLab CI without explicit stages: key (uses implicit default stages)
+# Detection must rely on job-shape + script: signals
+
+build_app:
+  image: node:18
+  script:
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+
+run_tests:
+  image: node:18
+  script:
+    - npm ci
+    - npm test
+
+lint:
+  image: node:18
+  script:
+    - npm run lint

@@ -1,0 +1,32 @@
+# Synthetic NOT ASSESSABLE fixture: references an unresolvable composite action.
+# The action my-org/nonexistent-composite-action cannot be fetched at analysis time.
+# This file exercises the Not Assessable classification path for composite actions.
+
+name: composite-unresolvable-ci
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # NOT ASSESSABLE: composite action reference cannot be resolved statically.
+      # my-org/nonexistent-composite-action is a synthetic placeholder representing
+      # an action whose definition is unavailable (private repo, deleted, etc.).
+      - name: Run composite action (unresolvable)
+        uses: my-synthetic-org/nonexistent-composite-action@abc1234def5678ab
+        with:
+          environment: production
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test

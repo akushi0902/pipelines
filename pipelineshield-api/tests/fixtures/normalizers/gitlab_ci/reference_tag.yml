@@ -1,0 +1,29 @@
+stages:
+  - setup
+  - test
+
+.setup-steps:
+  script:
+    - export PATH="$HOME/.local/bin:$PATH"
+    - pip install -r requirements.txt
+
+.test-steps:
+  script:
+    - pytest tests/ -v --tb=short
+
+# Uses !reference to compose script from templates
+unit-tests:
+  stage: test
+  image: python:3.11
+  before_script: !reference [.setup-steps, script]
+  script:
+    - !reference [.test-steps, script]
+    - pytest --cov=src tests/
+
+# Uses !reference to a missing key — should be recorded as unresolved
+bad-reference:
+  stage: test
+  image: python:3.11
+  script:
+    - !reference [.nonexistent-job, script]
+    - echo fallback

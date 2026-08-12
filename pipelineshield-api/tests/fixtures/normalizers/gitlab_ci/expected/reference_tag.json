@@ -1,0 +1,128 @@
+{
+  "ir_version": "1.0",
+  "source_format": "gitlab_ci",
+  "triggers": [],
+  "trigger_details": {},
+  "permissions": {
+    "scope": "workflow",
+    "state": "absent",
+    "grants": {},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "bad-reference",
+      "name": "bad-reference",
+      "runs_on": "python:3.11",
+      "steps": [
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "[!reference ['.nonexistent-job', 'script']]\necho fallback",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    },
+    {
+      "id": "unit-tests",
+      "name": "unit-tests",
+      "runs_on": "python:3.11",
+      "steps": [
+        {
+          "id": null,
+          "name": "before_script",
+          "uses": null,
+          "run": "export PATH=\"$HOME/.local/bin:$PATH\"\npip install -r requirements.txt",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        },
+        {
+          "id": null,
+          "name": "script",
+          "uses": null,
+          "run": "pytest tests/ -v --tb=short\npytest --cov=src tests/",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": null,
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {
+        "scope": "job",
+        "state": "absent",
+        "grants": {},
+        "anchor": null
+      },
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": null,
+      "extraction_metadata": {}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [
+      {
+        "kind": "reference_unresolvable",
+        "locator": ".nonexistent-job.script",
+        "reason": "!reference ['.nonexistent-job', 'script'] could not be resolved: key '.nonexistent-job' not found — marked Not Assessable."
+      }
+    ],
+    "constructs_handled": [
+      "stages",
+      "include_local",
+      "workflow_rules",
+      "job_script",
+      "job_before_script",
+      "job_after_script",
+      "job_image",
+      "job_tags",
+      "job_variables",
+      "job_rules",
+      "job_only_except",
+      "job_extends",
+      "job_reference",
+      "global_default_inheritance",
+      "hidden_job_templates",
+      "job_needs"
+    ],
+    "constructs_excluded": [
+      "include_remote",
+      "include_project",
+      "include_template",
+      "include_component",
+      "trigger",
+      "release",
+      "artifacts",
+      "cache",
+      "parallel_matrix",
+      "environment",
+      "dast_configuration"
+    ],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": null
+}

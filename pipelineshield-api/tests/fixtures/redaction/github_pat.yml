@@ -1,0 +1,11 @@
+# Sample pipeline with a GitHub PAT in a checkout step
+name: build
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234
+      - run: echo "hello"

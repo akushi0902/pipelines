@@ -1,0 +1,17 @@
+[importlinter]
+root_packages =
+    pipelineshield
+
+[importlinter:contract:scoring-core-no-framework]
+name = Scoring core must not import framework modules
+type = forbidden
+source_modules =
+    pipelineshield.analysis.scoring
+forbidden_modules =
+    fastapi
+    sqlalchemy
+    httpx
+    requests
+    aiohttp
+    starlette
+    uvicorn

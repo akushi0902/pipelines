@@ -1,0 +1,29 @@
+{
+  "_comment": "Invalid: grade bands have a gap — C ends at 79, B starts at 81, missing 80",
+  "categories": [
+    {
+      "id": "secrets_hygiene",
+      "name": "Secrets Hygiene",
+      "weight": 100,
+      "enabled": true,
+      "description": "",
+      "controls": [
+        {
+          "id": "sh-001",
+          "category_id": "secrets_hygiene",
+          "severity": "critical",
+          "enabled": true,
+          "reference_tools": [],
+          "remediation_template_ref": null
+        }
+      ]
+    }
+  ],
+  "grade_bands": [
+    {"grade": "F", "min_score": 0,  "max_score": 59},
+    {"grade": "D", "min_score": 60, "max_score": 69},
+    {"grade": "C", "min_score": 70, "max_score": 79},
+    {"grade": "B", "min_score": 81, "max_score": 89},
+    {"grade": "A", "min_score": 90, "max_score": 100}
+  ]
+}

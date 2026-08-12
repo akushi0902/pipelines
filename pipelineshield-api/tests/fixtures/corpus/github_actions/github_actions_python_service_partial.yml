@@ -1,0 +1,64 @@
+# Synthetic partial variant: Python service
+# Present: lp-001, lp-002, sci-001, sh-002, sa-001, ds-001, ag-001
+# Gaps: iac-001 (no IaC scan), as-001 (no signing), sbom-001 (no SBOM), ds-002 (no container scan)
+
+name: python-service-partial-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  security:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # PRESENT sh-002: secret scanner
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b3246a1b330e87fa9b0f82 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@42375524bfc5dba77e569dfe3958aa0f7a25e52c # v5.4.0
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # PRESENT sa-001: SAST (bandit)
+      - name: SAST (bandit)
+        run: bandit -r src/ -ll
+
+      # PRESENT ds-001: dependency scan (pip-audit)
+      - name: Dependency scan (pip-audit)
+        run: pip-audit --requirement requirements.txt
+
+      # GAP iac-001: no checkov or tfsec IaC scan for infra/ directory
+      # GAP ds-002: no container image scan (trivy absent)
+      # GAP as-001: no cosign signing of built artifact
+      # GAP sbom-001: no syft SBOM generation
+
+      - name: Run tests
+        run: pytest
+
+  deploy:
+    needs: security
+    runs-on: ubuntu-24.04
+    environment:
+      # PRESENT ag-001: production environment with required reviewers
+      name: production
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Deploy
+        run: ./scripts/deploy.sh production
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}

@@ -1,0 +1,66 @@
+{
+  "ir_version": "1.0",
+  "source_format": "github_actions",
+  "triggers": ["push", "pull_request"],
+  "trigger_details": {
+    "push": {"branches": ["main"]},
+    "pull_request": {"branches": ["main"]}
+  },
+  "permissions": {
+    "scope": "workflow",
+    "state": "explicit",
+    "grants": {"contents": "read"},
+    "anchor": null
+  },
+  "jobs": [
+    {
+      "id": "build",
+      "name": "Build",
+      "runs_on": "ubuntu-latest",
+      "steps": [
+        {
+          "id": "checkout",
+          "name": "Checkout",
+          "uses": "actions/checkout@abc1234567890abcdef1234567890abcdef12345",
+          "run": null,
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": {"start_line": 12, "start_column": 9, "end_line": null},
+          "action_ref": {
+            "name": "actions/checkout",
+            "version_ref": "abc1234567890abcdef1234567890abcdef12345",
+            "pin_form": "sha",
+            "anchor": {"start_line": 12, "start_column": 16, "end_line": null}
+          },
+          "secret_refs": []
+        },
+        {
+          "id": "build",
+          "name": "Build",
+          "uses": null,
+          "run": "npm ci && npm run build",
+          "env": {},
+          "with_inputs": {},
+          "continue_on_error": false,
+          "anchor": {"start_line": 15, "start_column": 9, "end_line": null},
+          "action_ref": null,
+          "secret_refs": []
+        }
+      ],
+      "permissions": {"scope": "job", "state": "absent", "grants": {}, "anchor": null},
+      "needs": [],
+      "condition": null,
+      "matrix": null,
+      "anchor": {"start_line": 8, "start_column": 3, "end_line": null},
+      "extraction_metadata": {}
+    }
+  ],
+  "coverage_report": {
+    "unresolved": [],
+    "constructs_handled": ["push", "pull_request", "job", "step_run", "step_uses"],
+    "constructs_excluded": [],
+    "coverage_ratio": null
+  },
+  "trigger_anchor": {"start_line": 3, "start_column": 1, "end_line": null}
+}

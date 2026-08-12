@@ -1,0 +1,70 @@
+# PipelineShield Demo Sample — GitHub Actions INSECURE
+# This file is deliberately insecure for demonstration purposes.
+# It contains known security gaps to exercise PipelineShield detection.
+# DO NOT USE THIS AS A TEMPLATE. All secrets are non-real placeholders.
+
+name: Insecure CI Demo
+
+on:
+  push:
+    branches: ["**"]
+  pull_request_target:
+    types: [opened, synchronize]
+
+# No top-level permissions block — inherits permissive defaults
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Unpinned third-party action — should be pinned to a SHA digest
+      - uses: actions/checkout@v4
+
+      # Fork-controlled checkout in pull_request_target context — high risk
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # Hardcoded secret-shaped placeholder value — never a real credential
+      - name: Configure deployment
+        run: |
+          export API_KEY=EXAMPLE_NOT_A_REAL_TOKEN_0000AAAAABBBBBCCCCC
+          echo "Deploying with API_KEY=$API_KEY"
+
+      # Expression injection: PR title unsanitised in run block
+      - name: Print PR info
+        run: |
+          echo "PR title: ${{ github.event.pull_request.title }}"
+          echo "Branch: ${{ github.head_ref }}"
+
+      # Unpinned third-party action (not pinned to SHA)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # No dependency scanning step
+      # No secret scanning step
+      # No SAST step
+      # No SBOM generation
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # No environment protection / approval gate
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying..."
+          # No signing or provenance attestation
