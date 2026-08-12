@@ -6,14 +6,16 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
+# Copy application files
 COPY pyproject.toml ./
 COPY src ./src
 COPY alembic ./alembic
 COPY alembic.ini ./
-COPY tests/__init__.py ./tests/__init__.py
-COPY tests/fixtures/__init__.py ./tests/fixtures/__init__.py
-COPY tests/fixtures/seed_baseline.py ./tests/fixtures/seed_baseline.py
 
+# Copy all test fixtures required at runtime
+COPY tests ./tests
+
+# Install package
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir .
 
