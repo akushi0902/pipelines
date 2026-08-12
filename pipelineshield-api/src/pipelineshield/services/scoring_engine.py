@@ -1,34 +1,13 @@
 """ScoringEngine — pure, deterministic catalogue-pinned security posture scorer.
 
-Usage::
-
-    from pipelineshield.services.scoring_engine import ScoringEngine, ControlOutcome
-
-    engine = ScoringEngine(snapshot)
-    result = engine.score({
-        "sh-001": ControlOutcome.present,
-        "sh-002": ControlOutcome.missing,
-        "as-001": ControlOutcome.not_assessable,
-    })
-    print(result.score, result.grade)  # e.g. 67 "D"
-
-Design constraints (WO-013):
-- Pure: no database access, no HTTP, no wall-clock, no global state.
-- Deterministic: identical evaluations + snapshot → identical output on every call.
-- Stable iteration: categories and controls are always processed in sorted(id) order
-  so the score never depends on dict-insertion order.
-- Grade mapping reads grade_bands from the pinned snapshot, never from constants.
-- Denominator: sum of weights of enabled categories that have at least one assessable
-  control.  A fully Not Assessable category removes its weight from the denominator
-  and records a coverage limitation.  Disabled categories are excluded entirely.
-- Zero denominator: returns an unscorable result with a coverage-limitation notice
-  rather than raising or returning 0.
+No database access, HTTP, wall-clock, or global mutable state.
 """
+
 from __future__ import annotations
 
 import enum
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Mapping
 
 from pipelineshield.catalogue.schemas import CatalogueSnapshot
@@ -68,12 +47,7 @@ class CategoryScore:
 
 @dataclass(frozen=True)
 class ScoreResult:
-    """Complete result of one scoring call.
-
-    ``is_unscorable`` is True when every enabled category is fully Not Assessable
-    and the denominator is zero.  In that case ``score`` and ``grade`` are both
-    ``None`` and ``coverage_limitations`` explains why.
-    """
+    """Complete result of one scoring call."""
 
     score: int | None
     grade: str | None
@@ -87,22 +61,20 @@ class ScoreResult:
 
 
 class ScoringEngine:
-    """Pure, injected-snapshot scoring engine.
+    """Pure, deterministic scoring engine using one pinned catalogue snapshot."""
 
-    Constructed with an immutable ``CatalogueSnapshot`` so the same engine
-    instance can be called multiple times without any global state changes.
-    Dependency-injected into services to make unit testing trivial.
-    """
-
-    # Weight multipliers for each outcome
     _OUTCOME_MULTIPLIERS: dict[ControlOutcome, float] = {
         ControlOutcome.present: 1.0,
         ControlOutcome.partial: 0.5,
         ControlOutcome.missing: 0.0,
-        ControlOutcome.not_assessable: 0.0,  # excluded from denominator separately
+        ControlOutcome.not_assessable: 0.0,
     }
 
-    def __init__(self, snapshot: CatalogueSnapshot, catalogue_version_id: uuid.UUID) -> None:
+    def __init__(
+        self,
+        snapshot: CatalogueSnapshot,
+        catalogue_version_id: uuid.UUID,
+    ) -> None:
         self._snapshot = snapshot
         self._catalogue_version_id = catalogue_version_id
 
@@ -110,40 +82,46 @@ class ScoringEngine:
         self,
         evaluations: Mapping[str, ControlOutcome | str],
     ) -> ScoreResult:
-        """Compute the security posture score from control evaluation outcomes.
+        """Compute a deterministic score from control evaluation outcomes.
 
-        ``evaluations`` maps control_id → ControlOutcome (or its string value).
-        Controls absent from the map are treated as ``missing``.
-
-        Returns a ``ScoreResult`` with score, grade, per-category breakdown, and
-        coverage limitations.  Always deterministic for identical inputs.
+        Controls absent from ``evaluations`` are treated as ``missing``.
         """
-        # Normalise string values to enum
+
         normalised: dict[str, ControlOutcome] = {}
+
         for ctrl_id, outcome in evaluations.items():
-            if isinstance(outcome, ControlOutcome):
-                normalised[ctrl_id] = outcome
-            else:
-                normalised[ctrl_id] = ControlOutcome(outcome)
+            try:
+                normalised[ctrl_id] = (
+                    outcome
+                    if isinstance(outcome, ControlOutcome)
+                    else ControlOutcome(outcome)
+                )
+            except ValueError as exc:
+                raise ValueError(
+                    f"Unknown control outcome for {ctrl_id!r}: {outcome!r}"
+                ) from exc
 
         categories: list[CategoryScore] = []
         coverage_limitations: list[str] = []
-        total_earned: float = 0.0
-        denominator: int = 0
-        assessed_total: int = 0
-        excluded_total: int = 0
 
-        # Stable sort: always iterate categories by id
+        total_earned = 0.0
+        denominator = 0
+        assessed_total = 0
+        excluded_total = 0
+
         sorted_categories = sorted(
-            (c for c in self._snapshot.categories if c.enabled),
-            key=lambda c: c.id,
+            (category for category in self._snapshot.categories if category.enabled),
+            key=lambda category: category.id,
         )
 
-        for cat in sorted_categories:
-            # Only consider enabled controls, stable-sorted by id
+        for category in sorted_categories:
             enabled_controls = sorted(
-                (ctrl for ctrl in cat.controls if ctrl.enabled),
-                key=lambda ctrl: ctrl.id,
+                (
+                    control
+                    for control in category.controls
+                    if control.enabled
+                ),
+                key=lambda control: control.id,
             )
 
             present_count = 0
@@ -151,8 +129,12 @@ class ScoringEngine:
             missing_count = 0
             not_assessable_count = 0
 
-            for ctrl in enabled_controls:
-                outcome = normalised.get(ctrl.id, ControlOutcome.missing)
+            for control in enabled_controls:
+                outcome = normalised.get(
+                    control.id,
+                    ControlOutcome.missing,
+                )
+
                 if outcome is ControlOutcome.not_assessable:
                     not_assessable_count += 1
                 elif outcome is ControlOutcome.present:
@@ -162,46 +144,62 @@ class ScoringEngine:
                 else:
                     missing_count += 1
 
-            assessable_count = len(enabled_controls) - not_assessable_count
-            fully_not_assessable = assessable_count == 0 and len(enabled_controls) > 0
+            assessable_count = (
+                len(enabled_controls) - not_assessable_count
+            )
 
-            if fully_not_assessable or len(enabled_controls) == 0:
-                # Category excluded from denominator
+            fully_not_assessable = (
+                len(enabled_controls) > 0
+                and assessable_count == 0
+            )
+
+            if not enabled_controls or fully_not_assessable:
                 in_denominator = False
                 cat_earned = 0.0
-                if len(enabled_controls) > 0:
+
+                if enabled_controls:
                     coverage_limitations.append(
-                        f"Category '{cat.id}' ({cat.name}) excluded from denominator: "
-                        f"all {not_assessable_count} enabled control(s) are Not Assessable."
+                        f"Category '{category.id}' ({category.name}) "
+                        f"excluded from denominator: all "
+                        f"{not_assessable_count} enabled control(s) "
+                        "are Not Assessable."
                     )
                     excluded_total += not_assessable_count
             else:
                 in_denominator = True
-                denominator += cat.weight
+                denominator += category.weight
                 assessed_total += assessable_count
                 excluded_total += not_assessable_count
 
-                # Earned weight: present + 0.5*partial out of assessable
                 earned_fraction = (
                     present_count + 0.5 * partial_count
                 ) / assessable_count
-                cat_earned = cat.weight * earned_fraction
+
+                cat_earned = category.weight * earned_fraction
                 total_earned += cat_earned
 
-            categories.append(CategoryScore(
-                category_id=cat.id,
-                category_name=cat.name,
-                category_weight=cat.weight,
-                earned_weight=cat_earned,
-                assessable_count=assessable_count,
-                not_assessable_count=not_assessable_count,
-                present_count=present_count,
-                partial_count=partial_count,
-                missing_count=missing_count,
-                in_denominator=in_denominator,
-            ))
+            categories.append(
+                CategoryScore(
+                    category_id=category.id,
+                    category_name=category.name,
+                    category_weight=category.weight,
+                    earned_weight=cat_earned,
+                    assessable_count=assessable_count,
+                    not_assessable_count=not_assessable_count,
+                    present_count=present_count,
+                    partial_count=partial_count,
+                    missing_count=missing_count,
+                    in_denominator=in_denominator,
+                )
+            )
 
         if denominator == 0:
+            limitations = list(coverage_limitations)
+            limitations.append(
+                "Score cannot be computed: no assessable controls found "
+                "across all enabled categories."
+            )
+
             return ScoreResult(
                 score=None,
                 grade=None,
@@ -209,10 +207,7 @@ class ScoringEngine:
                 assessed_control_count=0,
                 excluded_control_count=excluded_total,
                 categories=tuple(categories),
-                coverage_limitations=tuple(coverage_limitations + [
-                    "Score cannot be computed: no assessable controls found across "
-                    "all enabled categories."
-                ]),
+                coverage_limitations=tuple(limitations),
                 catalogue_version_id=self._catalogue_version_id,
                 is_unscorable=True,
             )
@@ -234,16 +229,15 @@ class ScoringEngine:
         )
 
     def _map_grade(self, score: int) -> str:
-        """Map an integer score to a letter grade using the pinned snapshot's bands.
+        """Map a score to a grade using the pinned catalogue snapshot."""
 
-        The snapshot's grade_bands are guaranteed to cover 0-100 contiguously
-        (validated at snapshot creation time).  Binary search is not needed for
-        the small number of bands (typically 5).
-        """
-        for band in sorted(self._snapshot.grade_bands, key=lambda b: b.min_score):
+        for band in sorted(
+            self._snapshot.grade_bands,
+            key=lambda band: band.min_score,
+        ):
             if band.min_score <= score <= band.max_score:
                 return band.grade
-        # Should never reach here given validated snapshot; fail explicitly
+
         raise ValueError(
             f"Score {score} falls outside all grade bands in the snapshot. "
             "This indicates a corrupted snapshot that bypassed validation."
