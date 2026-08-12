@@ -3,12 +3,13 @@
 Data classification: Confidential
 Retention: 90 days
 """
+
 from __future__ import annotations
 
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,12 +19,17 @@ from .base import Base
 class Analysis(Base):
     """Pipeline security analysis result.
 
-    Stores the scored output of a single analysis run: the 100-point
-    security posture score, letter grade, coverage report, and a reference
-    to the catalogue version used.  The raw pipeline definition is stored
-    separately in pipeline_definition (encrypted).
+    Stores the scored output of a single analysis run, including the score,
+    letter grade, coverage report, and catalogue version used.
 
-    Deletion semantics: hard delete only (Confidential).  No deleted_at or
+    An analysis may be unscorable when all applicable controls are
+    NOT_ASSESSABLE. In that state, score and grade are NULL and
+    unscorable_reason must contain the reason.
+
+    The raw pipeline definition is stored separately in pipeline_definition
+    (encrypted).
+
+    Deletion semantics: hard delete only (Confidential). No deleted_at or
     is_deleted columns are permitted on this table.
     """
 
@@ -35,6 +41,7 @@ class Analysis(Base):
         default=uuid.uuid4,
         comment="Primary key — analysis identifier.",
     )
+
     workspace_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("workspace.id", ondelete="RESTRICT"),
@@ -42,6 +49,7 @@ class Analysis(Base):
         index=True,
         comment="Owning workspace — tenant scope.",
     )
+
     owner_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("app_user.id", ondelete="RESTRICT"),
@@ -49,12 +57,14 @@ class Analysis(Base):
         index=True,
         comment="User who initiated the analysis.",
     )
+
     catalogue_version_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("control_catalogue_version.id", ondelete="RESTRICT"),
         nullable=False,
         comment="Catalogue version used for scoring.",
     )
+
     pipeline_format: Mapped[str] = mapped_column(
         String(64),
         nullable=False,
@@ -63,30 +73,41 @@ class Analysis(Base):
             "jenkins_declarative."
         ),
     )
+
     format_confidence: Mapped[float] = mapped_column(
         Numeric(4, 3),
         nullable=False,
         comment="Format detection confidence score (0.000–1.000).",
     )
-    score: Mapped[int] = mapped_column(
+
+    score: Mapped[int | None] = mapped_column(
         Integer,
-        nullable=False,
-        comment="Security posture score (0–100).",
+        nullable=True,
+        comment=(
+            "Security posture score (0–100) for assessed controls. "
+            "NULL when the analysis is unscorable."
+        ),
     )
-    grade: Mapped[str] = mapped_column(
+
+    grade: Mapped[str | None] = mapped_column(
         String(2),
-        nullable=False,
-        comment="Letter grade derived from score (A, B, C, D, F).",
+        nullable=True,
+        comment=(
+            "Letter grade derived from assessed-control score "
+            "(A, B, C, D, E, F). NULL when unscorable."
+        ),
     )
+
     coverage_report: Mapped[dict] = mapped_column(  # type: ignore[type-arg]
         JSONB,
         nullable=False,
         default=dict,
         comment=(
             "Coverage report listing unresolved fragments and "
-            "Not Assessable categories."
+            "NOT_ASSESSABLE controls."
         ),
     )
+
     status: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
@@ -96,22 +117,26 @@ class Analysis(Base):
             "(model timeout), failed."
         ),
     )
+
     unscorable_reason: Mapped[str | None] = mapped_column(
         String(128),
         nullable=True,
         comment=(
             "Reason the analysis could not be scored "
-            "(e.g. 'all_not_assessable').  NULL when a numeric score is present."
+            "(e.g. 'all_not_assessable'). NULL when a numeric score "
+            "and grade are present."
         ),
     )
+
     confirmed_format: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
         comment=(
-            "User-confirmed pipeline format.  NULL = auto-detected. "
+            "User-confirmed pipeline format. NULL = auto-detected. "
             "Set via POST /api/v1/analyses/{id}/format-confirmation."
         ),
     )
+
     format_confirmed_by_user: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -122,6 +147,7 @@ class Analysis(Base):
             "Immutable once set."
         ),
     )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -134,35 +160,46 @@ class Analysis(Base):
         back_populates="analyses",
         lazy="raise",
     )
+
     owner: Mapped["AppUser"] = relationship(  # type: ignore[name-defined]
         foreign_keys=[owner_id],
         lazy="raise",
     )
+
     catalogue_version: Mapped["ControlCatalogueVersion"] = relationship(  # type: ignore[name-defined]
         back_populates="analyses",
         lazy="raise",
     )
+
     pipeline_definition: Mapped["PipelineDefinition"] = relationship(  # type: ignore[name-defined]
         back_populates="analysis",
         lazy="raise",
         uselist=False,
     )
+
     findings: Mapped[list["Finding"]] = relationship(  # type: ignore[name-defined]
         back_populates="analysis",
         lazy="raise",
     )
+
     generated_drafts: Mapped[list["GeneratedDraft"]] = relationship(  # type: ignore[name-defined]
         back_populates="analysis",
         lazy="raise",
     )
+
     category_scores: Mapped[list["AnalysisCategoryScore"]] = relationship(  # type: ignore[name-defined]
         back_populates="analysis",
         lazy="raise",
     )
+
     coverage_limitations: Mapped[list["CoverageLimitation"]] = relationship(  # type: ignore[name-defined]
         back_populates="analysis",
         lazy="raise",
     )
 
     def __repr__(self) -> str:
-        return f"<Analysis id={self.id!r} score={self.score!r} grade={self.grade!r}>"
+        return (
+            f"<Analysis id={self.id!r} "
+            f"score={self.score!r} grade={self.grade!r} "
+            f"unscorable_reason={self.unscorable_reason!r}>"
+        )
