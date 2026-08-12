@@ -26,6 +26,7 @@ from .schemas import CatalogueSnapshot
 log = logging.getLogger(__name__)
 
 # Package resource containing the catalogue fixture.
+#
 # Expected location:
 #
 # pipelineshield/
@@ -33,11 +34,25 @@ log = logging.getLogger(__name__)
 #     └── data/
 #         └── catalogue_v1.json
 #
-_FIXTURE_RESOURCE = files(
-    "pipelineshield.catalogue.data"
-).joinpath("catalogue_v1.json")
 
 _V1_VERSION = 1
+
+
+def _load_catalogue_fixture(
+    fixture_path: Path | None = None,
+) -> dict:
+    """Load catalogue fixture from override path or package data."""
+
+    if fixture_path is not None:
+        return json.loads(
+            fixture_path.read_text(encoding="utf-8")
+        )
+
+    return json.loads(
+        files("pipelineshield.catalogue.data")
+        .joinpath("catalogue_v1.json")
+        .read_text(encoding="utf-8")
+    )
 
 
 def seed_v1_catalogue(
@@ -45,7 +60,19 @@ def seed_v1_catalogue(
     created_by: uuid.UUID,
     fixture_path: Path | None = None,
 ) -> ControlCatalogueVersion:
-    """Insert the ratified v1 catalogue if no active version exists."""
+    """Insert the ratified v1 catalogue if no active version exists.
+
+    Idempotent: calling this function multiple times returns the
+    existing active catalogue instead of creating duplicates.
+
+    Args:
+        session: SQLAlchemy session.
+        created_by: UUID of the actor creating the catalogue.
+        fixture_path: Optional override fixture path for tests.
+
+    Returns:
+        Active ControlCatalogueVersion row.
+    """
 
     repo = SQLAlchemyCatalogueRepository(session)
 
@@ -57,14 +84,7 @@ def seed_v1_catalogue(
         )
         return existing
 
-    if fixture_path is not None:
-        raw = json.loads(
-            fixture_path.read_text(encoding="utf-8")
-        )
-    else:
-        raw = json.loads(
-            _FIXTURE_RESOURCE.read_text(encoding="utf-8")
-        )
+    raw = _load_catalogue_fixture(fixture_path)
 
     snapshot = CatalogueSnapshot.model_validate(raw)
 
