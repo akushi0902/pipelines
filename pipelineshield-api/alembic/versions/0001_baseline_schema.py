@@ -127,6 +127,18 @@ _AUDIT_TABLE = "audit_event"
 _APP_ROLE = "pipelineshield_app"
 
 
+def _pg_literal(value: str) -> str:
+    """Return *value* as a single-quoted, escaped PostgreSQL string literal.
+
+    PostgreSQL's DDL statements (COMMENT ON, DO $$ ... $$ blocks, etc.) do
+    not accept bind parameters over the extended query protocol — only DML
+    (SELECT/INSERT/UPDATE/DELETE) can be parameterized server-side. All
+    values passed here are hardcoded module-level constants, never
+    user input, so literal interpolation after escaping is safe.
+    """
+    return "'" + value.replace("'", "''") + "'"
+
+
 def upgrade() -> None:
     # ------------------------------------------------------------------
     # 1. workspace
@@ -1006,9 +1018,7 @@ def upgrade() -> None:
     # ------------------------------------------------------------------
     for table, comment in _TABLE_COMMENTS.items():
         op.execute(
-            sa.text(f"COMMENT ON TABLE {table} IS :comment").bindparams(
-                comment=comment
-            )
+            sa.text(f"COMMENT ON TABLE {table} IS {_pg_literal(comment)}")
         )
 
     # ------------------------------------------------------------------
@@ -1023,11 +1033,11 @@ def upgrade() -> None:
     # ------------------------------------------------------------------
     op.execute(sa.text(
         "DO $$ BEGIN "
-        "  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :role) THEN "
+        f"  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = {_pg_literal(_APP_ROLE)}) THEN "
         "    CREATE ROLE pipelineshield_app NOLOGIN; "
         "  END IF; "
         "END $$"
-    ).bindparams(role=_APP_ROLE))
+    ))
 
     # Grant INSERT + SELECT on all non-audit tables.
     for table in _APP_ROLE_FULL_TABLES:
@@ -1065,11 +1075,11 @@ def downgrade() -> None:
     op.execute(sa.text(f"REVOKE ALL ON ALL TABLES IN SCHEMA public FROM {_APP_ROLE}"))
     op.execute(sa.text(
         "DO $$ BEGIN "
-        "  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :role) THEN "
+        f"  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = {_pg_literal(_APP_ROLE)}) THEN "
         "    DROP ROLE pipelineshield_app; "
         "  END IF; "
         "END $$"
-    ).bindparams(role=_APP_ROLE))
+    ))
 
     # Drop tables in reverse dependency order.
     op.drop_table("sample_pipeline")
