@@ -56,11 +56,7 @@ _SEVERITY_ORDER = (
 
 
 class MissingScoringResultError(Exception):
-    """Raised when the analysis row has no valid scoring state.
-
-    Maps to HTTP 500 with correlation_id; no stack trace is forwarded to
-    the client.
-    """
+    """Raised when the analysis row has no valid scoring state."""
 
 
 class ReportService:
@@ -73,10 +69,6 @@ class ReportService:
     def __init__(self, session: Session) -> None:
         self._session = session
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
     def build_report(self, analysis: Analysis) -> AnalysisReport:
         """Compose and validate an AnalysisReport for *analysis*.
 
@@ -84,17 +76,23 @@ class ReportService:
         inconsistent state (no score and no unscorable_reason).
         """
         cat_scores = self._load_category_scores(analysis.id)
-        findings = self._load_findings(analysis.id, analysis.workspace_id)
+        findings = self._load_findings(
+            analysis.id,
+            analysis.workspace_id,
+        )
         cov_limits = self._load_coverage_limitations(analysis.id)
+
         catalogue_version_int = self._resolve_catalogue_version(
             analysis.catalogue_version_id
         )
 
-        # Validate scoring state.
         total_score: float | None = None
         letter_grade: str | None = None
 
-        if not analysis.unscorable_reason:
+        if analysis.unscorable_reason:
+            total_score = None
+            letter_grade = None
+        else:
             if analysis.score is None or not analysis.grade:
                 raise MissingScoringResultError(
                     f"Analysis {analysis.id} has no score/grade and no "
@@ -125,10 +123,6 @@ class ReportService:
             created_at=analysis.created_at,
         )
 
-    # ------------------------------------------------------------------
-    # Query helpers
-    # ------------------------------------------------------------------
-
     def _load_category_scores(
         self,
         analysis_id: uuid.UUID,
@@ -145,26 +139,13 @@ class ReportService:
         analysis_id: uuid.UUID,
         workspace_id: uuid.UUID,
     ) -> Sequence[Finding]:
-        findings = (
+        return (
             self._session.execute(
                 select(Finding)
                 .where(
                     Finding.analysis_id == analysis_id,
                     Finding.workspace_id == workspace_id,
                 )
-                .order_by(Finding.created_at)
-            )
-            .scalars()
-            .all()
-        )
-
-        if findings:
-            return findings
-
-        return (
-            self._session.execute(
-                select(Finding)
-                .where(Finding.analysis_id == analysis_id)
                 .order_by(Finding.created_at)
             )
             .scalars()
@@ -202,10 +183,6 @@ class ReportService:
             return 0
 
         return int(version_int)
-
-    # ------------------------------------------------------------------
-    # Assembly helpers
-    # ------------------------------------------------------------------
 
     @staticmethod
     def _build_category_scores(
@@ -258,19 +235,21 @@ class ReportService:
 
             if finding.anchor_line is not None:
                 excerpt = ""
+                end_line: int | None = None
 
                 if isinstance(finding.evidence, dict):
-                    excerpt = str(
-                        finding.evidence.get("snippet", "")
-                    )
+                    excerpt = str(finding.evidence.get("snippet", ""))
+
+                    raw_end_line = finding.evidence.get("anchor_end_line")
+                    if raw_end_line is not None:
+                        try:
+                            end_line = int(raw_end_line)
+                        except (TypeError, ValueError):
+                            end_line = None
 
                 anchor = AnchorDetail(
                     start_line=finding.anchor_line,
-                    end_line=(
-                        finding.evidence.get("anchor_end_line")
-                        if isinstance(finding.evidence, dict)
-                        else None
-                    ),
+                    end_line=end_line,
                     excerpt=excerpt,
                 )
 
@@ -312,7 +291,6 @@ class ReportService:
     ) -> list[HumanReviewItem]:
         items: list[HumanReviewItem] = []
 
-        # AI-sourced findings.
         for finding in findings:
             if finding.source == "ai":
                 items.append(
@@ -323,13 +301,10 @@ class ReportService:
                     )
                 )
 
-        # NOT_ASSESSABLE controls from coverage limitations.
         seen_control_ids: set[str] = set()
 
         for limitation in cov_limits:
-            for control_id in (
-                limitation.affected_control_ids or []
-            ):
+            for control_id in limitation.affected_control_ids or []:
                 if control_id in seen_control_ids:
                     continue
 
