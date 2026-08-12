@@ -277,14 +277,17 @@ async def create_analysis(
         raise
 
     except Exception as exc:
-        _LOG.error(
+        # IMPORTANT:
+        # Use logger.exception() here so the complete Python traceback
+        # appears in the backend logs. The previous implementation used
+        # exc_info=False, which hid the actual exception causing HTTP 500.
+        _LOG.exception(
             "analysis_ingestion_unhandled_error",
             extra={
                 "correlation_id": correlation_id,
                 "actor_id": str(actor.user_id),
                 "error_type": type(exc).__name__,
             },
-            exc_info=False,
         )
 
         _raise_http_error(
