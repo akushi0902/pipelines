@@ -14,11 +14,19 @@ import secrets
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
-from fastapi.responses import JSONResponse
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from pipelineshield.analysis.format_detector import CONFIDENCE_THRESHOLD
+from pipelineshield.analysis.rule_engine.engine import RuleEngine
+from pipelineshield.analysis.rules import build_default_registry
 from pipelineshield.api.security.authz_guard import (
     CurrentActor,
     PERSONA_CAPABILITIES,
@@ -71,22 +79,36 @@ _ALLOWED_PASTE_TYPES = frozenset(
 # Dependency: database session
 # ---------------------------------------------------------------------------
 
+
 def get_db() -> Session:  # pragma: no cover
-    raise NotImplementedError("get_db must be overridden before use")
+    raise NotImplementedError(
+        "get_db must be overridden before use"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Dependency: orchestrator
 # ---------------------------------------------------------------------------
 
+
 def get_orchestrator() -> AnalysisOrchestrator:  # pragma: no cover
-    """Build an AnalysisOrchestrator using the environment key provider."""
-    return AnalysisOrchestrator(key_provider=EnvKeyProvider())
+    """Build an AnalysisOrchestrator with the default rule engine."""
+
+    registry = build_default_registry()
+    rule_engine = RuleEngine(
+        registry=registry,
+    )
+
+    return AnalysisOrchestrator(
+        key_provider=EnvKeyProvider(),
+        rule_engine=rule_engine,
+    )
 
 
 # ---------------------------------------------------------------------------
 # RFC 7807 error builder
 # ---------------------------------------------------------------------------
+
 
 def _error_body(
     correlation_id: str,
@@ -98,6 +120,7 @@ def _error_body(
     parse_column: int | None = None,
     errors: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+
     error_type = (
         "https://pipelineshield.internal/errors/"
         f"{title.lower().replace(' ', '-')}"
@@ -135,6 +158,7 @@ def _raise_http_error(
     parse_column: int | None = None,
     errors: list[dict[str, Any]] | None = None,
 ) -> None:
+
     body = _error_body(
         correlation_id=correlation_id,
         status_code=status_code,
@@ -155,6 +179,7 @@ def _raise_http_error(
 # ---------------------------------------------------------------------------
 # POST /api/v1/analyses
 # ---------------------------------------------------------------------------
+
 
 @router.post(
     "",
@@ -178,9 +203,12 @@ async def create_analysis(
         Depends(require_capability("analysis:create")),
     ],
     session: Session = Depends(get_db),
-    orchestrator: AnalysisOrchestrator = Depends(get_orchestrator),
+    orchestrator: AnalysisOrchestrator = Depends(
+        get_orchestrator
+    ),
 ) -> AnalysisResponse:
     """Accept a pipeline definition and return the created analysis."""
+
     correlation_id = secrets.token_hex(16)
 
     content_type = (
@@ -191,22 +219,36 @@ async def create_analysis(
     )
 
     try:
-        if content_type == "multipart/form-data":
-            (
-                definition_text,
-                filename,
-                declared_format_str,
-            ) = await _parse_upload(request, correlation_id)
 
-        elif content_type in _ALLOWED_PASTE_TYPES or content_type == "":
+        if content_type == "multipart/form-data":
+
             (
                 definition_text,
                 filename,
                 declared_format_str,
-            ) = await _parse_paste(request, correlation_id)
+            ) = await _parse_upload(
+                request,
+                correlation_id,
+            )
+
+        elif (
+            content_type in _ALLOWED_PASTE_TYPES
+            or content_type == ""
+        ):
+
+            (
+                definition_text,
+                filename,
+                declared_format_str,
+            ) = await _parse_paste(
+                request,
+                correlation_id,
+            )
 
         else:
-            raise UnsupportedContentTypeError(content_type)
+            raise UnsupportedContentTypeError(
+                content_type
+            )
 
         return orchestrator.ingest(
             session=session,
@@ -218,6 +260,7 @@ async def create_analysis(
         )
 
     except PayloadTooLargeError as exc:
+
         _raise_http_error(
             correlation_id,
             413,
@@ -227,6 +270,7 @@ async def create_analysis(
         )
 
     except EmptyContentError as exc:
+
         _raise_http_error(
             correlation_id,
             400,
@@ -236,6 +280,7 @@ async def create_analysis(
         )
 
     except UnsupportedContentTypeError as exc:
+
         _raise_http_error(
             correlation_id,
             415,
@@ -245,6 +290,7 @@ async def create_analysis(
         )
 
     except YamlParseError as exc:
+
         _raise_http_error(
             correlation_id,
             422,
@@ -256,6 +302,7 @@ async def create_analysis(
         )
 
     except NoCatalogueError as exc:
+
         _raise_http_error(
             correlation_id,
             503,
@@ -265,6 +312,7 @@ async def create_analysis(
         )
 
     except IngestionError as exc:
+
         _raise_http_error(
             correlation_id,
             exc.status_code,
@@ -277,10 +325,8 @@ async def create_analysis(
         raise
 
     except Exception as exc:
-        # IMPORTANT:
-        # Use logger.exception() here so the complete Python traceback
-        # appears in the backend logs. The previous implementation used
-        # exc_info=False, which hid the actual exception causing HTTP 500.
+
+        # Keep the full traceback in backend logs.
         _LOG.exception(
             "analysis_ingestion_unhandled_error",
             extra={
@@ -294,7 +340,10 @@ async def create_analysis(
             correlation_id,
             500,
             "Internal Server Error",
-            "An unexpected error occurred. Please retry with the correlation id.",
+            (
+                "An unexpected error occurred. "
+                "Please retry with the correlation id."
+            ),
         )
 
     raise AssertionError("Unreachable")
@@ -303,6 +352,7 @@ async def create_analysis(
 # ---------------------------------------------------------------------------
 # POST /api/v1/analyses/{analysis_id}/format-confirmation
 # ---------------------------------------------------------------------------
+
 
 @router.post(
     "/{analysis_id}/format-confirmation",
@@ -326,42 +376,59 @@ async def confirm_format(
     ],
     session: Session = Depends(get_db),
 ) -> FormatConfirmationResponse:
+
     """Confirm the pipeline format for an analysis."""
+
     correlation_id = secrets.token_hex(16)
 
-    analysis_repo = SQLAlchemyAnalysisRepository(session)
+    analysis_repo = SQLAlchemyAnalysisRepository(
+        session
+    )
 
-    analysis = analysis_repo.get_by_id_owner_scoped(
-        analysis_id=analysis_id,
-        owner_id=actor.user_id,
-        workspace_id=actor.workspace_id,
+    analysis = (
+        analysis_repo.get_by_id_owner_scoped(
+            analysis_id=analysis_id,
+            owner_id=actor.user_id,
+            workspace_id=actor.workspace_id,
+        )
     )
 
     if analysis is None:
-        raise ResourceNotVisibleError(resource_type="analysis")
+        raise ResourceNotVisibleError(
+            resource_type="analysis"
+        )
 
     if analysis.format_confirmed_by_user:
+
         _raise_http_error(
             correlation_id,
             409,
             "Conflict",
             (
-                "This analysis has already been format-confirmed. "
-                "Re-confirmation is not permitted."
+                "This analysis has already been "
+                "format-confirmed. Re-confirmation "
+                "is not permitted."
             ),
             constraint="already_confirmed",
         )
 
-    if analysis.format_confidence >= CONFIDENCE_THRESHOLD:
+    if (
+        analysis.format_confidence
+        >= CONFIDENCE_THRESHOLD
+    ):
+
         _raise_http_error(
             correlation_id,
             422,
             "Unprocessable",
             (
-                "Format confirmation is not required for this analysis "
-                f"(confidence={analysis.format_confidence:.3f} "
+                "Format confirmation is not required "
+                "for this analysis "
+                f"(confidence="
+                f"{analysis.format_confidence:.3f} "
                 f">= {CONFIDENCE_THRESHOLD}). "
-                "The detected format has already been applied."
+                "The detected format has already "
+                "been applied."
             ),
             constraint="confirmation_not_required",
         )
@@ -375,6 +442,7 @@ async def confirm_format(
     session.flush()
 
     writer = AuditWriter(session)
+
     writer.write(
         actor_id=str(actor.user_id),
         actor_persona=actor.persona,
@@ -412,6 +480,7 @@ async def confirm_format(
 # GET /api/v1/analyses/{analysis_id}
 # ---------------------------------------------------------------------------
 
+
 @router.get(
     "/{analysis_id}",
     response_model=AnalysisReport,
@@ -431,10 +500,14 @@ async def get_analysis_report(
     ],
     session: Session = Depends(get_db),
 ) -> AnalysisReport:
+
     """Return the full risk assessment report for an analysis."""
+
     correlation_id = secrets.token_hex(16)
 
-    analysis_repo = SQLAlchemyAnalysisRepository(session)
+    analysis_repo = SQLAlchemyAnalysisRepository(
+        session
+    )
 
     actor_caps = PERSONA_CAPABILITIES.get(
         actor.persona,
@@ -442,18 +515,24 @@ async def get_analysis_report(
     )
 
     if "analysis:read:all" in actor_caps:
+
         analysis = analysis_repo.get_by_id(
             analysis_id=analysis_id,
             workspace_id=actor.workspace_id,
         )
+
     else:
-        analysis = analysis_repo.get_by_id_owner_scoped(
-            analysis_id=analysis_id,
-            owner_id=actor.user_id,
-            workspace_id=actor.workspace_id,
+
+        analysis = (
+            analysis_repo.get_by_id_owner_scoped(
+                analysis_id=analysis_id,
+                owner_id=actor.user_id,
+                workspace_id=actor.workspace_id,
+            )
         )
 
     if analysis is None:
+
         _raise_http_error(
             correlation_id,
             404,
@@ -463,10 +542,15 @@ async def get_analysis_report(
         )
 
     try:
+
         report_service = ReportService(session)
-        report = report_service.build_report(analysis)
+
+        report = report_service.build_report(
+            analysis
+        )
 
     except MissingScoringResultError as exc:
+
         _LOG.error(
             "analysis_report_scoring_missing",
             extra={
@@ -483,12 +567,14 @@ async def get_analysis_report(
             500,
             "Internal Server Error",
             (
-                "Scoring result is unavailable for this analysis. "
-                "Please retry with the correlation id."
+                "Scoring result is unavailable for "
+                "this analysis. Please retry with "
+                "the correlation id."
             ),
         )
 
     writer = AuditWriter(session)
+
     writer.write(
         actor_id=str(actor.user_id),
         actor_persona=actor.persona,
@@ -507,7 +593,7 @@ async def get_analysis_report(
     _LOG.info(
         "analysis_report_read",
         extra={
-            "analysis_id": str(analysis.id),
+            "analysis_id": str(analysis_id),
             "correlation_id": correlation_id,
             "actor_id": str(actor.user_id),
             "persona": actor.persona,
@@ -523,32 +609,49 @@ async def get_analysis_report(
 # Parsing helpers
 # ---------------------------------------------------------------------------
 
+
 async def _parse_paste(
     request: Request,
     correlation_id: str,
 ) -> tuple[str, str | None, str | None]:
+
     """Parse a JSON paste request body."""
+
     try:
+
         raw = await request.json()
+
     except Exception as exc:
+
         _raise_http_error(
             correlation_id,
             400,
             "Malformed Request",
             "Request body is not valid JSON.",
         )
-        raise AssertionError("Unreachable") from exc
+
+        raise AssertionError(
+            "Unreachable"
+        ) from exc
 
     try:
-        parsed = PasteAnalysisRequest.model_validate(raw)
+
+        parsed = PasteAnalysisRequest.model_validate(
+            raw
+        )
+
     except Exception as exc:
+
         _raise_http_error(
             correlation_id,
             422,
             "Validation Error",
             f"Request body failed validation: {exc}",
         )
-        raise AssertionError("Unreachable") from exc
+
+        raise AssertionError(
+            "Unreachable"
+        ) from exc
 
     declared = (
         parsed.declared_format.value
@@ -567,17 +670,25 @@ async def _parse_upload(
     request: Request,
     correlation_id: str,
 ) -> tuple[str, str | None, str | None]:
+
     """Parse a multipart upload request."""
+
     try:
+
         form = await request.form()
+
     except Exception as exc:
+
         _raise_http_error(
             correlation_id,
             400,
             "Malformed Request",
             "Could not parse multipart form data.",
         )
-        raise AssertionError("Unreachable") from exc
+
+        raise AssertionError(
+            "Unreachable"
+        ) from exc
 
     file_fields = [
         value
@@ -586,11 +697,15 @@ async def _parse_upload(
     ]
 
     if len(file_fields) != 1:
+
         _raise_http_error(
             correlation_id,
             400,
             "Missing File",
-            "Multipart request must contain exactly one file part.",
+            (
+                "Multipart request must contain exactly "
+                "one file part."
+            ),
             constraint="multipart_file_required",
         )
 
@@ -599,9 +714,12 @@ async def _parse_upload(
     raw_bytes = await file_field.read()
 
     if len(raw_bytes) > PAYLOAD_MAX_BYTES:
-        raise PayloadTooLargeError(len(raw_bytes))
+        raise PayloadTooLargeError(
+            len(raw_bytes)
+        )
 
     if not raw_bytes:
+
         raise HTTPException(
             status_code=400,
             detail=_error_body(
@@ -614,27 +732,43 @@ async def _parse_upload(
         )
 
     try:
-        definition_text = raw_bytes.decode("utf-8-sig")
+
+        definition_text = raw_bytes.decode(
+            "utf-8-sig"
+        )
+
     except UnicodeDecodeError:
-        definition_text = raw_bytes.decode("latin-1")
+
+        definition_text = raw_bytes.decode(
+            "latin-1"
+        )
 
     if not definition_text.strip():
+
         raise HTTPException(
             status_code=400,
             detail=_error_body(
                 correlation_id,
                 400,
                 "Empty Content",
-                "Uploaded file must not contain only whitespace.",
+                (
+                    "Uploaded file must not contain "
+                    "only whitespace."
+                ),
                 constraint="non_empty_content",
             ),
         )
 
     filename = file_field.filename or None
 
-    declared_str = form.get("declared_format")
+    declared_str = form.get(
+        "declared_format"
+    )
 
-    if isinstance(declared_str, UploadFile):
+    if isinstance(
+        declared_str,
+        UploadFile,
+    ):
         declared_str = None
 
     declared_format_str = (
