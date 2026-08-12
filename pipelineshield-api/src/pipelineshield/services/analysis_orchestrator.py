@@ -39,7 +39,9 @@ from pipelineshield.api.v1.schemas.analysis import (
 from pipelineshield.catalogue.schemas import CatalogueSnapshot
 from pipelineshield.crypto.key_provider import KeyProvider
 from pipelineshield.persistence.models.analysis import Analysis
-from pipelineshield.persistence.models.pipeline_definition import PipelineDefinition
+from pipelineshield.persistence.models.pipeline_definition import (
+    PipelineDefinition,
+)
 from pipelineshield.persistence.repositories.analysis import (
     SQLAlchemyAnalysisRepository,
 )
@@ -53,11 +55,19 @@ from pipelineshield.platform.audit_writer import AuditWriter
 from pipelineshield.services.normalizer_registry import (
     NormalizerRegistry,
     NormalizationResult,
+    create_default_registry,
 )
 from pipelineshield.services.scoring_engine import (
     ControlOutcome,
     ScoreResult,
     ScoringEngine,
+)
+
+from pipelineshield.analysis.rule_engine.engine import RuleEngine
+from pipelineshield.analysis.rule_engine.protocol import (
+    EvaluationContext,
+    EvaluationResult,
+    RuleOutcomeVerdict,
 )
 
 _LOG = logging.getLogger(__name__)
@@ -308,17 +318,22 @@ class AnalysisOrchestrator:
         self,
         key_provider: KeyProvider,
         normalizer_registry: NormalizerRegistry | None = None,
-        rule_engine: Any | None = None,
+        rule_engine: RuleEngine | None = None,
     ) -> None:
         self._key_provider = key_provider
-        self._normalizer_registry = (
-            normalizer_registry
-            or NormalizerRegistry()
-        )
 
         # IMPORTANT:
-        # RuleEngine is injected because its constructor/API is not present
-        # in the files supplied so far.
+        # Use the actual built-in normalizers rather than the empty
+        # passthrough registry. The built-in normalizers are responsible
+        # for creating PipelineIR.
+        self._normalizer_registry = (
+            normalizer_registry
+            if normalizer_registry is not None
+            else create_default_registry()
+        )
+
+        # RuleEngine is injected because rule registration is application
+        # startup configuration.
         self._rule_engine = rule_engine
 
     # ------------------------------------------------------------------
@@ -449,6 +464,7 @@ class AnalysisOrchestrator:
                     "fragments": [],
                     "not_assessable": [],
                 },
+                pipeline_ir=None,
             )
 
         else:
@@ -498,11 +514,12 @@ class AnalysisOrchestrator:
         t0 = time.monotonic()
 
         evaluations = self._evaluate_controls(
-            normalized_content=(
-                norm_result.normalized_content
-            ),
+            normalization_result=norm_result,
             detected_format=detected_format_str,
             snapshot=pinned_snapshot,
+            correlation_id=correlation_id,
+            workspace_id=str(actor.workspace_id),
+            catalogue_version=str(active_cat.id),
         )
 
         timings["evaluation_ms"] = (
@@ -523,11 +540,11 @@ class AnalysisOrchestrator:
             time.monotonic() - t0
         ) * 1000
 
-        # --------------------------------------------------------------
         # IMPORTANT:
-        # Do NOT convert an unscorable result into 0/F.
-        # --------------------------------------------------------------
-
+        # Do NOT convert None into 0 or "-" into F.
+        #
+        # When the ScoringEngine says the analysis is unscorable,
+        # preserve that state.
         final_score = score_result.score
         final_grade = score_result.grade
 
@@ -549,16 +566,6 @@ class AnalysisOrchestrator:
             ] = list(
                 score_result.coverage_limitations
             )
-
-        # ==============================================================
-        # Stage 7.5: Persist category scores
-        # ==============================================================
-
-        self._persist_category_scores(
-            session=session,
-            analysis_id=None,
-            score_result=score_result,
-        )
 
         # ==============================================================
         # Stage 8: Persist Analysis + PipelineDefinition
@@ -686,113 +693,187 @@ class AnalysisOrchestrator:
 
     def _evaluate_controls(
         self,
-        normalized_content: str,
+        normalization_result: NormalizationResult,
         detected_format: str,
         snapshot: CatalogueSnapshot,
+        correlation_id: str,
+        workspace_id: str,
+        catalogue_version: str,
     ) -> Mapping[str, ControlOutcome]:
-        """Evaluate the normalized pipeline against the catalogue.
+        """Run RuleEngine against the PipelineIR and aggregate outcomes.
 
-        The RuleEngine must return a mapping:
+        RuleEngine.evaluate() requires PipelineIR.
 
-            control_id -> ControlOutcome
+        The previous implementation incorrectly passed:
 
-        This is the missing connection in the original implementation.
+            normalized_content: str
+
+        into RuleEngine.evaluate().
+
+        This method now passes:
+
+            normalization_result.pipeline_ir
         """
 
         if self._rule_engine is None:
             raise RuntimeError(
                 "RuleEngine is not configured. "
-                "Analysis scoring requires control evaluation "
-                "before ScoringEngine.score()."
+                "Analysis scoring requires a configured RuleEngine."
             )
 
-        # --------------------------------------------------------------
-        # IMPORTANT:
-        # This adapter supports the common RuleEngine API patterns.
-        # --------------------------------------------------------------
+        pipeline_ir = normalization_result.pipeline_ir
 
-        engine = self._rule_engine
-
-        # Pattern 1:
-        # engine.evaluate(content, snapshot)
-        if hasattr(engine, "evaluate"):
-            result = engine.evaluate(
-                normalized_content,
-                snapshot,
-            )
-
-        # Pattern 2:
-        # engine.run(content, snapshot)
-        elif hasattr(engine, "run"):
-            result = engine.run(
-                normalized_content,
-                snapshot,
-            )
-
-        # Pattern 3:
-        # engine.evaluate(ir, catalogue)
-        elif hasattr(engine, "execute"):
-            result = engine.execute(
-                normalized_content,
-                snapshot,
-            )
-
-        else:
+        if pipeline_ir is None:
             raise RuntimeError(
-                "Configured RuleEngine does not expose "
-                "evaluate(), run(), or execute()."
+                "Normalization did not produce PipelineIR. "
+                f"Cannot evaluate {detected_format!r} pipeline."
             )
 
-        # --------------------------------------------------------------
-        # Convert result to control_id -> ControlOutcome
-        # --------------------------------------------------------------
-
-        if isinstance(result, Mapping):
-            evaluations: dict[
-                str,
-                ControlOutcome,
-            ] = {}
-
-            for control_id, outcome in result.items():
-                if isinstance(
-                    outcome,
-                    ControlOutcome,
-                ):
-                    evaluations[
-                        str(control_id)
-                    ] = outcome
-                elif isinstance(outcome, str):
-                    evaluations[
-                        str(control_id)
-                    ] = ControlOutcome(
-                        outcome
-                    )
-                elif hasattr(
-                    outcome,
-                    "outcome",
-                ):
-                    raw_outcome = outcome.outcome
-
-                    if isinstance(
-                        raw_outcome,
-                        ControlOutcome,
-                    ):
-                        evaluations[
-                            str(control_id)
-                        ] = raw_outcome
-                    else:
-                        evaluations[
-                            str(control_id)
-                        ] = ControlOutcome(
-                            str(raw_outcome)
-                        )
-
-            return evaluations
-
-        raise RuntimeError(
-            "RuleEngine returned an unsupported result. "
-            "Expected a mapping of control_id to ControlOutcome."
+        context = EvaluationContext(
+            correlation_id=correlation_id,
+            workspace_id=workspace_id,
+            catalogue_version=catalogue_version,
+            source_format=detected_format,
         )
+
+        result = self._rule_engine.evaluate(
+            pipeline_ir,
+            snapshot,
+            context=context,
+        )
+
+        if not isinstance(
+            result,
+            EvaluationResult,
+        ):
+            raise RuntimeError(
+                "RuleEngine returned an unsupported result. "
+                "Expected EvaluationResult."
+            )
+
+        return self._convert_rule_results_to_controls(
+            result
+        )
+
+    # ------------------------------------------------------------------
+    # Rule result -> control result
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _convert_rule_results_to_controls(
+        result: EvaluationResult,
+    ) -> Mapping[str, ControlOutcome]:
+        """Aggregate RuleOutcome values into control-level outcomes.
+
+        Mapping:
+
+            satisfied       -> present
+            violated        -> missing
+            not_assessable  -> not_assessable
+
+        If multiple rules belong to one control:
+
+            all satisfied                  -> present
+            all violated                   -> missing
+            satisfied + violated            -> partial
+            assessable + not_assessable     -> partial
+            only not_assessable             -> not_assessable
+        """
+
+        by_control: dict[
+            str,
+            list[RuleOutcomeVerdict],
+        ] = {}
+
+        for outcome in result.outcomes:
+            by_control.setdefault(
+                outcome.control_id,
+                [],
+            ).append(
+                outcome.verdict
+            )
+
+        evaluations: dict[
+            str,
+            ControlOutcome,
+        ] = {}
+
+        for control_id, verdicts in by_control.items():
+
+            has_satisfied = (
+                RuleOutcomeVerdict.SATISFIED
+                in verdicts
+            )
+
+            has_violated = (
+                RuleOutcomeVerdict.VIOLATED
+                in verdicts
+            )
+
+            has_not_assessable = (
+                RuleOutcomeVerdict.NOT_ASSESSABLE
+                in verdicts
+            )
+
+            # ------------------------------------------------------
+            # All rules are satisfied
+            # ------------------------------------------------------
+
+            if (
+                has_satisfied
+                and not has_violated
+                and not has_not_assessable
+            ):
+                evaluations[
+                    control_id
+                ] = ControlOutcome(
+                    "present"
+                )
+                continue
+
+            # ------------------------------------------------------
+            # All applicable rules are violated
+            # ------------------------------------------------------
+
+            if (
+                has_violated
+                and not has_satisfied
+                and not has_not_assessable
+            ):
+                evaluations[
+                    control_id
+                ] = ControlOutcome(
+                    "missing"
+                )
+                continue
+
+            # ------------------------------------------------------
+            # Nothing assessable
+            # ------------------------------------------------------
+
+            if (
+                has_not_assessable
+                and not has_satisfied
+                and not has_violated
+            ):
+                evaluations[
+                    control_id
+                ] = ControlOutcome(
+                    "not_assessable"
+                )
+                continue
+
+            # ------------------------------------------------------
+            # Mixed evidence
+            # ------------------------------------------------------
+
+            evaluations[
+                control_id
+            ] = ControlOutcome(
+                "partial"
+            )
+
+        return evaluations
 
     # ------------------------------------------------------------------
     # Content validation
@@ -868,23 +949,6 @@ class AnalysisOrchestrator:
             "Score cannot be computed because "
             "no assessable controls were found."
         )
-
-    def _persist_category_scores(
-        self,
-        session: Session,
-        analysis_id: uuid.UUID | None,
-        score_result: ScoreResult,
-    ) -> None:
-        """Persist per-category score rows.
-
-        This method is intentionally called after the Analysis ID exists.
-        Therefore the actual category rows are inserted from _persist().
-        """
-
-        # Category rows are persisted in _persist() after analysis creation.
-        # This method is kept as a separate hook so the scoring result is
-        # explicitly carried through the ingestion pipeline.
-        return
 
     # ------------------------------------------------------------------
     # Persistence
